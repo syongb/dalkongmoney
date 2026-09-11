@@ -1,0 +1,25 @@
+# dependencies
+/node_modules
+/.pnpm-store
+/.pnp
+.pnp.*
+
+# Next.js
+/.next/
+/out/
+
+# local environment files (never commit secrets)
+.env*
+!.env.local.example
+
+# logs and operating-system files
+*.log
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Supabase local-only files
+/supabase/.branches
+/supabase/.temp
