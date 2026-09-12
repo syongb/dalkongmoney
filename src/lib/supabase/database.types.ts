@@ -67,6 +67,7 @@ export type Database = {
           is_active: boolean
           name: string
           sort_order: number
+          type: string
         }
         Insert: {
           created_at?: string
@@ -75,6 +76,7 @@ export type Database = {
           is_active?: boolean
           name: string
           sort_order?: number
+          type: string
         }
         Update: {
           created_at?: string
@@ -83,6 +85,7 @@ export type Database = {
           is_active?: boolean
           name?: string
           sort_order?: number
+          type?: string
         }
         Relationships: [
           {
@@ -278,11 +281,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_household_id_category_id_fkey"
-            columns: ["household_id", "category_id"]
+            foreignKeyName: "transactions_household_category_type_fkey"
+            columns: ["household_id", "category_id", "type"]
             isOneToOne: false
             referencedRelation: "categories"
-            referencedColumns: ["household_id", "id"]
+            referencedColumns: ["household_id", "id", "type"]
           },
           {
             foreignKeyName: "transactions_household_id_created_by_fkey"
