@@ -9,7 +9,7 @@ export type CategoryOption = Pick<
 
 export type MemberOption = {
   id: string;
-  label: "나" | "배우자";
+  label: string;
 };
 
 export type TransactionFormValues = Pick<

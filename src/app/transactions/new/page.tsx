@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { todayInKorea, type MemberOption } from "@/lib/transactions";
+import { getHouseholdMemberOptions } from "@/lib/household-members";
+import { todayInKorea } from "@/lib/transactions";
 import { TransactionForm } from "../transaction-form";
 
 export default async function NewTransactionPage() {
@@ -16,14 +17,10 @@ export default async function NewTransactionPage() {
     .maybeSingle();
   if (!membership) redirect("/");
 
-  const [{ data: categories }, { data: householdMembers }] = await Promise.all([
+  const [{ data: categories }, members] = await Promise.all([
     supabase.from("categories").select("id, name, sort_order, is_active, type").eq("household_id", membership.household_id).eq("is_active", true).order("sort_order"),
-    supabase.from("household_members").select("user_id").eq("household_id", membership.household_id),
+    getHouseholdMemberOptions(supabase, membership.household_id),
   ]);
-  const members: MemberOption[] = (householdMembers ?? []).map(({ user_id }) => ({
-    id: user_id,
-    label: user_id === user.id ? "나" : "배우자",
-  }));
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">

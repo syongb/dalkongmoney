@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getHouseholdMemberOptions } from "@/lib/household-members";
 import { createClient } from "@/lib/supabase/server";
-import { transactionType, type MemberOption } from "@/lib/transactions";
+import { transactionType } from "@/lib/transactions";
 import { DeleteTransactionForm } from "../../delete-transaction-form";
 import { TransactionForm } from "../../transaction-form";
 
@@ -22,18 +23,14 @@ export default async function EditTransactionPage({
     .maybeSingle();
   if (!membership) redirect("/");
 
-  const [{ data: transaction }, { data: categories }, { data: householdMembers }] = await Promise.all([
+  const [{ data: transaction }, { data: categories }, members] = await Promise.all([
     supabase.from("transactions").select("*").eq("id", id).eq("household_id", membership.household_id).maybeSingle(),
     supabase.from("categories").select("id, name, sort_order, is_active, type").eq("household_id", membership.household_id).order("sort_order"),
-    supabase.from("household_members").select("user_id").eq("household_id", membership.household_id),
+    getHouseholdMemberOptions(supabase, membership.household_id),
   ]);
   if (!transaction) notFound();
 
-  const members: MemberOption[] = (householdMembers ?? []).map(({ user_id }) => ({
-    id: user_id,
-    label: user_id === user.id ? "나" : "배우자",
-  }));
-  const creator = transaction.created_by === user.id ? "나" : "배우자";
+  const creator = members.find((member) => member.id === transaction.created_by)?.label ?? "구성원";
   const createdAt = new Intl.DateTimeFormat("ko-KR", {
     dateStyle: "medium",
     timeStyle: "short",

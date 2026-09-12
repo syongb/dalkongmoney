@@ -1,15 +1,15 @@
 import Link from "next/link";
-import type { CategoryOption, TransactionListRow } from "@/lib/transactions";
+import type { CategoryOption, MemberOption, TransactionListRow } from "@/lib/transactions";
 
 export function TransactionList({
   transactions,
   categories,
-  currentUserId,
+  members,
   emptyMessage = "아직 등록된 거래가 없습니다.",
 }: {
   transactions: TransactionListRow[];
   categories: CategoryOption[];
-  currentUserId: string;
+  members: MemberOption[];
   emptyMessage?: string;
 }) {
   if (transactions.length === 0) {
@@ -17,15 +17,14 @@ export function TransactionList({
   }
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
+  const memberNames = new Map(members.map((member) => [member.id, member.label]));
 
   return (
     <div className="divide-y divide-stone-200">
       {transactions.map((transaction) => {
         const spender = transaction.is_shared
           ? "공동"
-          : transaction.spent_by === currentUserId
-            ? "나"
-            : "배우자";
+          : memberNames.get(transaction.spent_by ?? "") ?? "구성원";
         const date = transaction.transaction_date.slice(5).replace("-", "/");
         const typeLabel = transaction.type === "income" ? "수입" : "지출";
 

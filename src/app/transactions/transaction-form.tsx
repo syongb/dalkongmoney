@@ -43,6 +43,7 @@ export function TransactionForm({
   const [categoryWasChosen, setCategoryWasChosen] = useState(mode === "edit");
   const [merchantName, setMerchantName] = useState(initialValues.merchant_name ?? "");
   const [suggestion, setSuggestion] = useState("");
+  const currentMember = members.find((member) => member.id === currentUserId);
   const spouse = members.find((member) => member.id !== currentUserId);
   const initialSpender = initialValues.is_shared
     ? "shared"
@@ -213,12 +214,12 @@ export function TransactionForm({
       </fieldset>
 
       <fieldset>
-        <legend className="text-sm font-semibold">누가 사용했나요?</legend>
+        <legend className="text-sm font-semibold">누가 썼나요?</legend>
         <div className="mt-2 grid grid-cols-3 gap-2">
-          <SpenderOption value={currentUserId} label="나" defaultChecked={initialSpender === currentUserId} />
+          <SpenderOption value={currentUserId} label={currentMember?.label ?? "구성원"} defaultChecked={initialSpender === currentUserId} />
           <SpenderOption
             value={spouse?.id ?? ""}
-            label="배우자"
+            label={spouse?.label ?? "구성원"}
             defaultChecked={Boolean(spouse && initialSpender === spouse.id)}
             disabled={!spouse}
           />
