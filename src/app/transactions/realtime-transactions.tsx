@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { BudgetSummary } from "@/app/budget/budget-summary";
+import { buildMonthlyBudgetSummary, type MonthlyBudgetSummary } from "@/lib/budget";
+import { getCurrentKoreaMonth, millisecondsUntilNextKoreaDay, type KoreaMonth } from "@/lib/korea-date";
 import { createClient } from "@/lib/supabase/client";
 import type { CategoryOption, MemberOption, TransactionListRow } from "@/lib/transactions";
 import { TransactionList } from "./transaction-list";
@@ -15,6 +19,8 @@ type RealtimeTransactionsProps = {
   initialTransactions: TransactionListRow[];
   categories: CategoryOption[];
   members: MemberOption[];
+  month?: KoreaMonth;
+  initialBudgetSummary?: MonthlyBudgetSummary;
 };
 
 export function RealtimeTransactions({
@@ -23,9 +29,15 @@ export function RealtimeTransactions({
   initialTransactions,
   categories,
   members,
+  month,
+  initialBudgetSummary,
 }: RealtimeTransactionsProps) {
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [transactions, setTransactions] = useState(initialTransactions);
+  const [budgetSummary, setBudgetSummary] = useState<MonthlyBudgetSummary>(
+    initialBudgetSummary ?? { budgetAmount: null, spentAmount: 0, categories: [] },
+  );
   const latestRequestId = useRef(0);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const limit = variant === "home" ? 5 : null;
@@ -41,15 +53,49 @@ export function RealtimeTransactions({
 
     if (limit !== null) query = query.limit(limit);
 
+    if (variant === "home" && month) {
+      const [transactionsResult, budgetResult, expensesResult] = await Promise.all([
+        query,
+        supabase
+          .from("budgets")
+          .select("amount, category_id")
+          .eq("household_id", householdId)
+          .eq("budget_month", month.monthStart),
+        supabase
+          .from("transactions")
+          .select("amount, category_id")
+          .eq("household_id", householdId)
+          .eq("type", "expense")
+          .gte("transaction_date", month.monthStart)
+          .lt("transaction_date", month.nextMonthStart),
+      ]);
+
+      if (
+        transactionsResult.error ||
+        budgetResult.error ||
+        expensesResult.error ||
+        requestId !== latestRequestId.current
+      ) return;
+
+      setTransactions(transactionsResult.data ?? []);
+      setBudgetSummary(buildMonthlyBudgetSummary(
+        categories,
+        budgetResult.data,
+        expensesResult.data,
+      ));
+      return;
+    }
+
     const { data, error } = await query;
     if (error || requestId !== latestRequestId.current) return;
-
     setTransactions(data ?? []);
-  }, [householdId, limit, supabase]);
+  }, [categories, householdId, limit, month, supabase, variant]);
 
   useEffect(() => {
     let active = true;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let transactionChannel: ReturnType<typeof supabase.channel> | null = null;
+    let budgetChannel: ReturnType<typeof supabase.channel> | null = null;
+    let subscribing = false;
 
     const requestRefresh = () => {
       if (!active) return;
@@ -66,32 +112,52 @@ export function RealtimeTransactions({
     };
 
     async function subscribe() {
-      if (!active || channel) return;
+      if (!active || subscribing) return;
+      subscribing = true;
 
       try {
         await supabase.realtime.setAuth();
-        if (!active || channel) return;
+        if (!active) return;
 
-        channel = supabase
-          .channel(`household:${householdId}:transactions`, {
-            config: { private: true },
-          })
-          .on(
-            "broadcast",
-            { event: "transaction_changed" },
-            requestRefresh,
-          )
-          .subscribe((status) => {
-            if (status === "SUBSCRIBED") requestRefresh();
-          });
+        if (!transactionChannel) {
+          transactionChannel = supabase
+            .channel(`household:${householdId}:transactions`, {
+              config: { private: true },
+            })
+            .on("broadcast", { event: "transaction_changed" }, requestRefresh)
+            .subscribe((status) => {
+              if (status === "SUBSCRIBED") requestRefresh();
+            });
+        }
+
+        if (variant === "home" && !budgetChannel) {
+          budgetChannel = supabase
+            .channel(`household:${householdId}:budgets`, {
+              config: { private: true },
+            })
+            .on("broadcast", { event: "budget_changed" }, requestRefresh)
+            .subscribe((status) => {
+              if (status === "SUBSCRIBED") requestRefresh();
+            });
+        }
       } catch {
         // Keep the current list. A later online/visibility event retries the connection.
+      } finally {
+        subscribing = false;
       }
     }
 
     function recover() {
+      if (
+        variant === "home" &&
+        month &&
+        getCurrentKoreaMonth().monthStart !== month.monthStart
+      ) {
+        router.refresh();
+        return;
+      }
       requestRefresh();
-      if (!channel) void subscribe();
+      if (!transactionChannel || (variant === "home" && !budgetChannel)) void subscribe();
     }
 
     window.addEventListener("online", recover);
@@ -104,19 +170,31 @@ export function RealtimeTransactions({
       if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
       window.removeEventListener("online", recover);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      if (channel) void supabase.removeChannel(channel);
+      if (transactionChannel) void supabase.removeChannel(transactionChannel);
+      if (budgetChannel) void supabase.removeChannel(budgetChannel);
     };
-  }, [householdId, refreshTransactions, supabase]);
+  }, [householdId, month, refreshTransactions, router, supabase, variant]);
+
+  useEffect(() => {
+    if (variant !== "home") return;
+    const timer = window.setTimeout(() => {
+      router.refresh();
+    }, millisecondsUntilNextKoreaDay() + 1_000);
+    return () => window.clearTimeout(timer);
+  }, [month?.monthStart, router, variant]);
 
   if (variant === "home") {
     return (
-      <section className="mt-6 rounded-2xl bg-white px-4 py-5 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-bold">최근 거래</h2>
-          <Link href="/transactions" className="min-h-11 px-2 text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">전체 보기</Link>
-        </div>
-        <TransactionList transactions={transactions} categories={categories} members={members} />
-      </section>
+      <>
+        {month && <BudgetSummary month={month} summary={budgetSummary} />}
+        <section className="mt-6 rounded-2xl bg-white px-4 py-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-lg font-bold">최근 거래</h2>
+            <Link href="/transactions" className="min-h-11 px-2 text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">전체 보기</Link>
+          </div>
+          <TransactionList transactions={transactions} categories={categories} members={members} />
+        </section>
+      </>
     );
   }
 

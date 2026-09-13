@@ -24,6 +24,7 @@ type TransactionFormProps = {
   members: MemberOption[];
   initialValues: TransactionFormValues;
   transactionId?: string;
+  variant?: "standard" | "compact";
 };
 
 export function TransactionForm({
@@ -34,6 +35,7 @@ export function TransactionForm({
   members,
   initialValues,
   transactionId,
+  variant = "standard",
 }: TransactionFormProps) {
   const updateAction = updateTransaction.bind(null, transactionId ?? "");
   const serverAction = mode === "create" ? createTransaction : updateAction;
@@ -103,7 +105,7 @@ export function TransactionForm({
   }, [categoryWasChosen, householdId, merchantName, mode, selectedType, visibleCategories]);
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} className={variant === "compact" ? "space-y-4" : "space-y-6"}>
       <fieldset>
         <legend className="text-sm font-semibold">거래 유형</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -154,7 +156,7 @@ export function TransactionForm({
             min="1"
             step="1"
             required
-            autoFocus={mode === "create"}
+            autoFocus={mode === "create" && variant === "standard"}
             defaultValue={initialValues.amount || ""}
             placeholder="0"
             className={`min-h-16 min-w-0 flex-1 bg-transparent text-right text-3xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
@@ -243,7 +245,9 @@ export function TransactionForm({
       <button disabled={pending || visibleCategories.length === 0} className="min-h-14 w-full rounded-2xl bg-stone-900 px-4 text-lg font-bold text-white disabled:opacity-50">
         {pending ? "저장하는 중…" : mode === "create" ? "저장" : "수정 저장"}
       </button>
-      <Link href={mode === "create" ? "/" : "/transactions"} className="block min-h-11 text-center text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">취소</Link>
+      {variant === "standard" && (
+        <Link href={mode === "create" ? "/" : "/transactions"} className="block min-h-11 text-center text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">취소</Link>
+      )}
     </form>
   );
 }
