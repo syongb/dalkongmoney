@@ -15,3 +15,13 @@ body {
 }
 
 button, input, textarea { font: inherit; }
+
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  body main[class] {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1.5rem;
+  }
+}

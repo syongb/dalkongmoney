@@ -9,7 +9,7 @@ import { BudgetForm } from "./budget-form";
 export default async function BudgetPage({
   searchParams,
 }: {
-  searchParams: Promise<{ returnTo?: string | string[] }>;
+  searchParams: Promise<{ returnTo?: string | string[]; import?: string | string[] }>;
 }) {
   const params = await searchParams;
   const returnTo = safeReturnTo(params.returnTo, "/?view=budget");
@@ -65,14 +65,18 @@ export default async function BudgetPage({
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">
       <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} includeBudgets />
       <BackLink fallback={returnTo} />
-      <h1 className="mt-4 text-2xl font-bold">예산·카테고리 설정</h1>
+      <h1 className="mt-3 text-xl font-bold">예산·카테고리 설정</h1>
       <p className="mt-2 text-sm leading-6 text-stone-500">{month.monthLabel} 전체 예산은 지출 카테고리 예산을 합해 자동으로 계산합니다.</p>
-      <section className="mt-8 rounded-2xl bg-white p-5 shadow-sm">
+      {(Array.isArray(params.import) ? params.import[0] : params.import) === "empty" && (
+        <p role="status" className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">가져올 전월 카테고리 예산이 없습니다. 새로 설정해주세요.</p>
+      )}
+      <section className="mt-4 rounded-xl bg-white p-3 shadow-sm">
         <BudgetForm
           key={formKey}
           categories={budgetCategories}
           preservedInactiveBudgetTotal={preservedInactiveBudgetTotal}
           legacyOverallAmount={totalBudget?.amount ?? null}
+          isMonthEmpty={(budgets ?? []).every((budget) => budget.category_id === null)}
         />
       </section>
     </main>

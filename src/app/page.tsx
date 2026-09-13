@@ -57,7 +57,7 @@ export default async function Home({
         </section>
       ) : (
         <>
-          <section className="mt-8">
+          <section className="mt-5">
             <p className="text-sm text-stone-500">우리 가계부</p>
             <h2 className="mt-1 text-2xl font-bold">{household.name}</h2>
           </section>
@@ -72,7 +72,7 @@ export default async function Home({
             initialHomeTab={requestedView === "transactions" ? "transactions" : "budget"}
             initialBudgetSummary={buildMonthlyBudgetSummary(categories ?? [], budgets, expenses, today)}
           />
-          <details className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+          <details className="mt-4 rounded-xl bg-white p-4 shadow-sm">
             <summary className="min-h-11 cursor-pointer font-semibold leading-[2.75rem]">가계부 정보</summary>
             <p className="mt-2 text-sm text-stone-600">{membership?.role === "owner" ? "관리자" : "구성원"} · {household.currency_code}</p>
             {membership?.role === "owner" && <InviteForm />}

@@ -107,7 +107,7 @@ export function TransactionForm({
   }, [categoryWasChosen, householdId, merchantName, mode, selectedType, visibleCategories]);
 
   return (
-    <form action={action} className={variant === "compact" ? "space-y-4" : "space-y-6"}>
+    <form action={action} className={variant === "compact" ? "space-y-3" : "space-y-4"}>
       <fieldset>
         <legend className="text-sm font-semibold">거래 유형</legend>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -161,7 +161,7 @@ export function TransactionForm({
             autoFocus={mode === "create" && variant === "standard"}
             defaultValue={initialValues.amount || ""}
             placeholder="0"
-            className={`min-h-16 min-w-0 flex-1 bg-transparent text-right text-3xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
+            className={`min-h-14 min-w-0 flex-1 bg-transparent text-right text-2xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
           />
           <span className="ml-2 text-lg font-semibold">원</span>
         </div>
@@ -231,9 +231,9 @@ export function TransactionForm({
         </div>
       </fieldset>
 
-      <details className="rounded-xl border border-stone-200 bg-white p-4" open={mode === "edit"}>
+      <details className="rounded-xl border border-stone-200 bg-white p-3" open={mode === "edit"}>
         <summary className="cursor-pointer text-sm font-semibold">추가 옵션 · 날짜 / 메모</summary>
-        <div className="mt-5 space-y-5">
+        <div className="mt-3 space-y-3">
           <label className="block text-sm font-medium">날짜
             <input name="transaction_date" type="date" required defaultValue={initialValues.transaction_date} className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 px-3" />
           </label>
@@ -244,7 +244,7 @@ export function TransactionForm({
       </details>
 
       {state.message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{state.message}</p>}
-      <button disabled={pending || visibleCategories.length === 0} className="min-h-14 w-full rounded-2xl bg-stone-900 px-4 text-lg font-bold text-white disabled:opacity-50">
+      <button disabled={pending || visibleCategories.length === 0} className="min-h-12 w-full rounded-xl bg-stone-900 px-4 font-bold text-white disabled:opacity-50">
         {pending ? "저장하는 중…" : mode === "create" ? "저장" : "수정 저장"}
       </button>
       {variant === "standard" && (

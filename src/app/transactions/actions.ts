@@ -86,11 +86,6 @@ async function authenticatedClient() {
   return { supabase, user, error };
 }
 
-function refreshTransactionPages() {
-  revalidatePath("/");
-  revalidatePath("/transactions");
-}
-
 export async function createTransaction(
   _state: TransactionActionState,
   formData: FormData,
@@ -125,7 +120,7 @@ export async function createTransaction(
   const { error } = await supabase.from("transactions").insert(transaction);
   if (error) return { message: error.message };
 
-  refreshTransactionPages();
+  revalidatePath("/");
   redirect("/");
 }
 
@@ -160,7 +155,7 @@ export async function updateTransaction(
   if (error) return { message: error.message };
   if (!data) return { message: "수정할 거래를 찾을 수 없습니다." };
 
-  refreshTransactionPages();
+  revalidatePath("/transactions");
   redirect("/transactions");
 }
 
@@ -183,6 +178,6 @@ export async function deleteTransaction(
   if (error) return { message: error.message };
   if (!data) return { message: "삭제할 거래를 찾을 수 없습니다." };
 
-  refreshTransactionPages();
+  revalidatePath("/transactions");
   redirect("/transactions");
 }

@@ -48,9 +48,7 @@ export function RealtimeRefresh({
             .channel(`household:${householdId}:transactions`, { config: { private: true } })
           if (includeTransactions) transactionChannel.on("broadcast", { event: "transaction_changed" }, requestRefresh);
           if (includeCategories) transactionChannel.on("broadcast", { event: "category_changed" }, requestRefresh);
-          transactionChannel.subscribe((status) => {
-            if (status === "SUBSCRIBED") requestRefresh();
-          });
+          transactionChannel.subscribe();
         }
 
         if (includeBudgets && !budgetChannel) {
@@ -58,9 +56,7 @@ export function RealtimeRefresh({
             .channel(`household:${householdId}:budgets`, { config: { private: true } })
             .on("broadcast", { event: "budget_changed" }, requestRefresh)
           if (includeCategories) budgetChannel.on("broadcast", { event: "category_changed" }, requestRefresh);
-          budgetChannel.subscribe((status) => {
-            if (status === "SUBSCRIBED") requestRefresh();
-          });
+          budgetChannel.subscribe();
         }
       } catch {
         // Keep the current screen. Online or visibility recovery retries later.

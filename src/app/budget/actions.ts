@@ -7,6 +7,62 @@ import { createClient } from "@/lib/supabase/server";
 
 export type BudgetActionState = { message: string };
 
+function previousMonthStart(monthStart: string) {
+  const year = Number(monthStart.slice(0, 4));
+  const month = Number(monthStart.slice(5, 7));
+  const previous = new Date(Date.UTC(year, month - 2, 1));
+  return `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}-01`;
+}
+
+export async function importPreviousMonthBudgets() {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=/budget");
+
+  const { data: membership } = await supabase
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!membership) redirect("/");
+
+  const monthStart = getCurrentKoreaMonth().monthStart;
+  const [{ data: activeCategories }, { data: previousBudgets }, { data: currentBudgets }] = await Promise.all([
+    supabase.from("categories").select("id").eq("household_id", membership.household_id).eq("type", "expense").eq("is_active", true),
+    supabase.from("budgets").select("category_id, amount").eq("household_id", membership.household_id).eq("budget_month", previousMonthStart(monthStart)).not("category_id", "is", null),
+    supabase.from("budgets").select("category_id").eq("household_id", membership.household_id).eq("budget_month", monthStart).not("category_id", "is", null),
+  ]);
+
+  const activeIds = new Set((activeCategories ?? []).map((category) => category.id));
+  const existingIds = new Set((currentBudgets ?? []).map((budget) => budget.category_id));
+  const rows = (previousBudgets ?? [])
+    .filter((budget) => budget.category_id && activeIds.has(budget.category_id) && !existingIds.has(budget.category_id))
+    .map((budget) => ({
+      household_id: membership.household_id,
+      budget_month: monthStart,
+      category_id: budget.category_id,
+      amount: budget.amount,
+    }));
+
+  if (rows.length === 0 && (currentBudgets ?? []).length === 0) {
+    redirect("/budget?import=empty");
+  }
+
+  if (rows.length > 0) {
+    const { error } = await supabase.from("budgets").insert(rows);
+    if (error) throw new Error(error.message);
+  }
+
+  const { data: savedBudgets } = await supabase.from("budgets").select("amount").eq("household_id", membership.household_id).eq("budget_month", monthStart).not("category_id", "is", null);
+  const total = (savedBudgets ?? []).reduce((sum, budget) => sum + Number(budget.amount), 0);
+  const { data: overall } = await supabase.from("budgets").update({ amount: total }).eq("household_id", membership.household_id).eq("budget_month", monthStart).is("category_id", null).select("id").maybeSingle();
+  if (!overall) await supabase.from("budgets").insert({ household_id: membership.household_id, budget_month: monthStart, amount: total, category_id: null });
+
+  revalidatePath("/");
+  revalidatePath("/budget");
+  redirect("/budget");
+}
+
 type SubmittedCategory = {
   id: string;
   name: string;

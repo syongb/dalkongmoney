@@ -14,11 +14,11 @@ const statusStyle: Record<BudgetStatusLabel, { text: string; bar: string }> = {
 function CategoryBudgetRow({ category }: { category: CategoryBudgetSummary }) {
   if (category.budgetAmount === null) {
     return (
-      <li className="border-t border-stone-100 py-5 first:border-t-0">
+      <li className="border-t border-stone-100 py-3 first:border-t-0">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
-            <p className="mt-1 text-sm text-stone-600">{won.format(category.spentAmount)}원 사용</p>
+            <p className="text-sm font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+            <p className="text-xs text-stone-600">{won.format(category.spentAmount)}원 사용</p>
           </div>
           <span className="text-sm font-medium text-stone-500">예산 미설정</span>
         </div>
@@ -35,24 +35,20 @@ function CategoryBudgetRow({ category }: { category: CategoryBudgetSummary }) {
   const style = statusStyle[status];
 
   return (
-    <li className="border-t border-stone-100 py-5 first:border-t-0">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
-          <p className="mt-1 text-sm text-stone-600">{won.format(spent)}원 / {won.format(budget)}원</p>
-        </div>
-        <span className={`text-sm font-bold ${style.text}`}>{status}</span>
+    <li className="border-t border-stone-100 py-3 first:border-t-0">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <p className="min-w-0 truncate font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+        <p className="shrink-0 text-xs text-stone-600">{won.format(spent)} / {won.format(budget)}원</p>
+        <span className={`shrink-0 text-xs font-bold ${style.text}`}>{rate === null ? "0원" : `${rate}%`} · {status}</span>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={`${category.name} 예산 ${rate === null ? "0원" : `${rate}% 사용`} · ${status}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={visualRate}>
+      <div className="mt-2 h-1.5 w-2/3 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={`${category.name} 예산 ${rate === null ? "0원" : `${rate}% 사용`} · ${status}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={visualRate}>
         <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${visualRate}%` }} />
       </div>
       {budget === 0 ? (
-        <p className={`mt-2 text-sm font-semibold ${style.text}`}>{spent > 0 ? `${won.format(over)}원 초과 · 초과` : "예산 0원 · 여유"}</p>
+        <p className={`mt-1 text-xs font-semibold ${style.text}`}>{spent > 0 ? `${won.format(over)}원 초과 · 초과` : "예산 0원 · 여유"}</p>
       ) : over > 0 ? (
-        <div className={`mt-2 text-sm font-semibold ${style.text}`}><p>{rate}% 사용</p><p className="mt-1">{won.format(over)}원 초과 · 초과</p></div>
-      ) : (
-        <p className={`mt-2 text-sm font-semibold ${style.text}`}>{rate}% 사용 · {status}</p>
-      )}
+        <p className={`mt-1 text-xs font-semibold ${style.text}`}>{won.format(over)}원 초과 · 초과</p>
+      ) : null}
     </li>
   );
 }
@@ -68,11 +64,11 @@ export function BudgetSummary({ month, summary }: { month: KoreaMonth; summary: 
   const totalRate = budgetAmount && budgetAmount > 0 ? Math.round((spentAmount / budgetAmount) * 100) : null;
 
   return (
-    <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
+    <section className="mt-4 rounded-xl bg-white p-4 shadow-sm">
       <h2 className="text-lg font-bold">{month.monthLabel}</h2>
-      <p className="mt-1 text-sm text-stone-500">카테고리별 이번 달 예산과 사용액입니다.</p>
+      <p className="mt-1 text-xs text-stone-500">카테고리별 이번 달 예산과 사용액입니다.</p>
 
-      <ul className="mt-4">
+      <ul className="mt-2">
         {categories.map((category) => <CategoryBudgetRow key={category.categoryId} category={category} />)}
       </ul>
 

@@ -23,3 +23,5 @@ Thumbs.db
 # Supabase local-only files
 /supabase/.branches
 /supabase/.temp
+
+.vercel
