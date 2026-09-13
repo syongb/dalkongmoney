@@ -1,6 +1,8 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { BackLink } from "@/app/back-link";
+import { RealtimeRefresh } from "@/app/realtime-refresh";
 import { getHouseholdMemberOptions } from "@/lib/household-members";
+import { safeReturnTo } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { transactionType } from "@/lib/transactions";
 import { DeleteTransactionForm } from "../../delete-transaction-form";
@@ -8,10 +10,14 @@ import { TransactionForm } from "../../transaction-form";
 
 export default async function EditTransactionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string | string[] }>;
 }) {
   const { id } = await params;
+  const query = await searchParams;
+  const returnTo = safeReturnTo(query.returnTo, "/transactions");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/transactions/${encodeURIComponent(id)}/edit`);
@@ -39,11 +45,13 @@ export default async function EditTransactionPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">
-      <Link href="/transactions" className="text-sm text-stone-600">← 거래 내역</Link>
+      <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} />
+      <BackLink fallback={returnTo} />
       <h1 className="mt-4 text-2xl font-bold">거래 수정</h1>
       <p className="mt-2 text-sm text-stone-500">처음 등록: {creator} · {createdAt}</p>
       <div className="mt-8">
         <TransactionForm
+          key={categories?.map((category) => `${category.id}:${category.name}:${category.is_active}`).join("|")}
           mode="edit"
           transactionId={transaction.id}
           householdId={membership.household_id}
@@ -60,6 +68,7 @@ export default async function EditTransactionPage({
             spent_by: transaction.spent_by,
             is_shared: transaction.is_shared,
           }}
+          cancelHref={returnTo}
         />
         <DeleteTransactionForm transactionId={transaction.id} />
       </div>

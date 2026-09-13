@@ -1,11 +1,19 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BackLink } from "@/app/back-link";
+import { RealtimeRefresh } from "@/app/realtime-refresh";
 import { createClient } from "@/lib/supabase/server";
 import { getHouseholdMemberOptions } from "@/lib/household-members";
+import { safeReturnTo } from "@/lib/navigation";
 import { todayInKorea } from "@/lib/transactions";
 import { TransactionForm } from "../transaction-form";
 
-export default async function NewTransactionPage() {
+export default async function NewTransactionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ returnTo?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const returnTo = safeReturnTo(params.returnTo, "/");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/transactions/new");
@@ -24,7 +32,8 @@ export default async function NewTransactionPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">
-      <Link href="/" className="text-sm text-stone-600">← 홈</Link>
+      <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} />
+      <BackLink fallback={returnTo} />
       <h1 className="mt-4 text-2xl font-bold">거래 등록</h1>
       <p className="mt-2 text-sm text-stone-500">금액과 카테고리만 선택해도 저장할 수 있습니다.</p>
       <div className="mt-8">
@@ -44,6 +53,7 @@ export default async function NewTransactionPage() {
             spent_by: user.id,
             is_shared: false,
           }}
+          cancelHref={returnTo}
         />
       </div>
     </main>

@@ -6,11 +6,15 @@ export function TransactionList({
   categories,
   members,
   emptyMessage = "아직 등록된 거래가 없습니다.",
+  showDate = true,
+  returnTo,
 }: {
   transactions: TransactionListRow[];
   categories: CategoryOption[];
   members: MemberOption[];
   emptyMessage?: string;
+  showDate?: boolean;
+  returnTo?: string;
 }) {
   if (transactions.length === 0) {
     return <p className="rounded-xl bg-stone-100 px-4 py-8 text-center text-sm text-stone-500">{emptyMessage}</p>;
@@ -29,8 +33,8 @@ export function TransactionList({
         const typeLabel = transaction.type === "income" ? "수입" : "지출";
 
         return (
-          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit`} className="grid min-h-16 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 py-2">
-            <span className="text-xs text-stone-500">{date}</span>
+          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={`grid min-h-16 items-center gap-3 py-2 ${showDate ? "grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}>
+            {showDate && <span className="text-xs text-stone-500">{date}</span>}
             <span className="min-w-0">
               <span className="block truncate font-medium">{transaction.merchant_name ?? "상호명 없음"}</span>
               <span className="block truncate text-xs text-stone-500">{categoryNames.get(transaction.category_id) ?? "카테고리 없음"} · {spender} · {typeLabel}</span>

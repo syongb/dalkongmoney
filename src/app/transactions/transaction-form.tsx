@@ -25,6 +25,7 @@ type TransactionFormProps = {
   initialValues: TransactionFormValues;
   transactionId?: string;
   variant?: "standard" | "compact";
+  cancelHref?: string;
 };
 
 export function TransactionForm({
@@ -36,6 +37,7 @@ export function TransactionForm({
   initialValues,
   transactionId,
   variant = "standard",
+  cancelHref,
 }: TransactionFormProps) {
   const updateAction = updateTransaction.bind(null, transactionId ?? "");
   const serverAction = mode === "create" ? createTransaction : updateAction;
@@ -246,7 +248,7 @@ export function TransactionForm({
         {pending ? "저장하는 중…" : mode === "create" ? "저장" : "수정 저장"}
       </button>
       {variant === "standard" && (
-        <Link href={mode === "create" ? "/" : "/transactions"} className="block min-h-11 text-center text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">취소</Link>
+        <Link href={cancelHref ?? (mode === "create" ? "/" : "/transactions")} className="block min-h-11 text-center text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">취소</Link>
       )}
     </form>
   );

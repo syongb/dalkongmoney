@@ -7,7 +7,7 @@ import { BudgetSummary } from "@/app/budget/budget-summary";
 import { buildMonthlyBudgetSummary, type MonthlyBudgetSummary } from "@/lib/budget";
 import { getCurrentKoreaMonth, millisecondsUntilNextKoreaDay, type KoreaMonth } from "@/lib/korea-date";
 import { createClient } from "@/lib/supabase/client";
-import type { CategoryOption, MemberOption, TransactionListRow } from "@/lib/transactions";
+import { todayInKorea, type CategoryOption, type MemberOption, type TransactionListRow } from "@/lib/transactions";
 import { TransactionList } from "./transaction-list";
 
 const transactionColumns =
@@ -20,6 +20,7 @@ type RealtimeTransactionsProps = {
   categories: CategoryOption[];
   members: MemberOption[];
   month?: KoreaMonth;
+  initialHomeTab?: "budget" | "transactions";
   initialBudgetSummary?: MonthlyBudgetSummary;
 };
 
@@ -30,16 +31,19 @@ export function RealtimeTransactions({
   categories,
   members,
   month,
+  initialHomeTab = "budget",
   initialBudgetSummary,
 }: RealtimeTransactionsProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [transactions, setTransactions] = useState(initialTransactions);
   const [budgetSummary, setBudgetSummary] = useState<MonthlyBudgetSummary>(
-    initialBudgetSummary ?? { budgetAmount: null, spentAmount: 0, categories: [] },
+    initialBudgetSummary ?? { budgetAmount: null, spentAmount: 0, todaySpentAmount: 0, categories: [] },
   );
+  const [homeTab, setHomeTab] = useState<"budget" | "transactions">(initialHomeTab);
   const latestRequestId = useRef(0);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const limit = variant === "home" ? 5 : null;
 
   const refreshTransactions = useCallback(async () => {
@@ -63,7 +67,7 @@ export function RealtimeTransactions({
           .eq("budget_month", month.monthStart),
         supabase
           .from("transactions")
-          .select("amount, category_id")
+          .select("amount, category_id, transaction_date")
           .eq("household_id", householdId)
           .eq("type", "expense")
           .gte("transaction_date", month.monthStart)
@@ -82,6 +86,7 @@ export function RealtimeTransactions({
         categories,
         budgetResult.data,
         expensesResult.data,
+        todayInKorea(),
       ));
       return;
     }
@@ -107,6 +112,15 @@ export function RealtimeTransactions({
       }, 150);
     };
 
+    const requestServerRefresh = () => {
+      if (!active) return;
+      if (serverRefreshTimer.current !== null) clearTimeout(serverRefreshTimer.current);
+      serverRefreshTimer.current = setTimeout(() => {
+        serverRefreshTimer.current = null;
+        router.refresh();
+      }, 150);
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") recover();
     };
@@ -125,6 +139,7 @@ export function RealtimeTransactions({
               config: { private: true },
             })
             .on("broadcast", { event: "transaction_changed" }, requestRefresh)
+            .on("broadcast", { event: "category_changed" }, requestServerRefresh)
             .subscribe((status) => {
               if (status === "SUBSCRIBED") requestRefresh();
             });
@@ -136,6 +151,7 @@ export function RealtimeTransactions({
               config: { private: true },
             })
             .on("broadcast", { event: "budget_changed" }, requestRefresh)
+            .on("broadcast", { event: "category_changed" }, requestServerRefresh)
             .subscribe((status) => {
               if (status === "SUBSCRIBED") requestRefresh();
             });
@@ -168,6 +184,7 @@ export function RealtimeTransactions({
       active = false;
       latestRequestId.current += 1;
       if (refreshTimer.current !== null) clearTimeout(refreshTimer.current);
+      if (serverRefreshTimer.current !== null) clearTimeout(serverRefreshTimer.current);
       window.removeEventListener("online", recover);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (transactionChannel) void supabase.removeChannel(transactionChannel);
@@ -184,16 +201,37 @@ export function RealtimeTransactions({
   }, [month?.monthStart, router, variant]);
 
   if (variant === "home") {
+    const selectHomeTab = (nextTab: "budget" | "transactions") => {
+      setHomeTab(nextTab);
+      router.replace(`/?view=${nextTab}`, { scroll: false });
+    };
+
     return (
       <>
-        {month && <BudgetSummary month={month} summary={budgetSummary} />}
-        <section className="mt-6 rounded-2xl bg-white px-4 py-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-bold">최근 거래</h2>
-            <Link href="/transactions" className="min-h-11 px-2 text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">전체 보기</Link>
-          </div>
-          <TransactionList transactions={transactions} categories={categories} members={members} />
-        </section>
+        <Link href={`/transactions/new?returnTo=${encodeURIComponent(`/?view=${homeTab}`)}`} className="mt-5 flex min-h-16 items-center justify-center rounded-2xl bg-stone-900 text-lg font-bold text-white shadow-sm">+ 거래 등록</Link>
+        <div role="tablist" aria-label="홈 보기 선택" className="mt-6 grid grid-cols-2 rounded-2xl bg-stone-200 p-1">
+          <button type="button" role="tab" aria-selected={homeTab === "budget"} onClick={() => selectHomeTab("budget")} className={`min-h-12 rounded-xl font-semibold ${homeTab === "budget" ? "bg-white shadow-sm" : "text-stone-600"}`}>예산</button>
+          <button type="button" role="tab" aria-selected={homeTab === "transactions"} onClick={() => selectHomeTab("transactions")} className={`min-h-12 rounded-xl font-semibold ${homeTab === "transactions" ? "bg-white shadow-sm" : "text-stone-600"}`}>거래 내역</button>
+        </div>
+
+        {homeTab === "budget" ? (
+          month && <BudgetSummary month={month} summary={budgetSummary} />
+        ) : (
+          <>
+            <nav aria-label="거래 내역 조회" className="mt-6 grid grid-cols-3 gap-2">
+              <Link href="/weekly" className="flex min-h-12 items-center justify-center rounded-xl bg-white px-2 text-center text-sm font-semibold shadow-sm">주간 내역</Link>
+              <Link href="/calendar" className="flex min-h-12 items-center justify-center rounded-xl bg-white px-2 text-center text-sm font-semibold shadow-sm">달력</Link>
+              <Link href="/monthly-summary" className="flex min-h-12 items-center justify-center rounded-xl bg-white px-2 text-center text-sm font-semibold shadow-sm">이번 달 결산</Link>
+            </nav>
+            <section className="mt-6 rounded-2xl bg-white px-4 py-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-bold">최근 거래</h2>
+                <Link href="/transactions" className="min-h-11 px-2 text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">전체 보기</Link>
+              </div>
+              <TransactionList transactions={transactions} categories={categories} members={members} returnTo="/?view=transactions" />
+            </section>
+          </>
+        )}
       </>
     );
   }

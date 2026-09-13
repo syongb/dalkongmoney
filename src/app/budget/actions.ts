@@ -7,50 +7,47 @@ import { createClient } from "@/lib/supabase/server";
 
 export type BudgetActionState = { message: string };
 
-export async function saveMonthlyBudget(
+type SubmittedCategory = {
+  id: string;
+  name: string;
+  amount: number | null;
+  isActive: boolean;
+};
+
+export async function saveBudgetCategories(
   _state: BudgetActionState,
   formData: FormData,
 ): Promise<BudgetActionState> {
-  const rawAmount = String(formData.get("amount") ?? "").trim();
-  if (!/^\d+$/.test(rawAmount)) {
-    return { message: "예산을 0원 이상의 숫자로 입력해주세요." };
+  const ids = formData.getAll("category_id").map(String);
+  const names = formData.getAll("category_name").map((value) => String(value).trim());
+  const amounts = formData.getAll("category_amount").map((value) => String(value).trim());
+  const activeValues = formData.getAll("category_active").map(String);
+
+  if (ids.length !== names.length || ids.length !== amounts.length || ids.length !== activeValues.length) {
+    return { message: "카테고리 입력을 다시 확인해주세요." };
   }
 
-  const amount = Number(rawAmount);
-  if (!Number.isSafeInteger(amount)) {
-    return { message: "예산 금액이 너무 큽니다." };
+  const categories: SubmittedCategory[] = [];
+  for (let index = 0; index < ids.length; index += 1) {
+    const isActive = activeValues[index] === "true";
+    const name = names[index];
+    if (isActive && !name) return { message: "카테고리 이름을 입력해주세요." };
+    if (name.length > 50) return { message: "카테고리 이름은 50자 이하로 입력해주세요." };
+
+    const rawAmount = amounts[index];
+    if (rawAmount && !/^\d+$/.test(rawAmount)) return { message: "예산은 0원 이상의 숫자로 입력해주세요." };
+    const amount = rawAmount ? Number(rawAmount) : null;
+    if (amount !== null && !Number.isSafeInteger(amount)) return { message: "예산 금액이 너무 큽니다." };
+
+    categories.push({ id: ids[index], name, amount, isActive });
   }
 
-  const categoryIds = formData.getAll("category_id").map(String);
-  const rawCategoryAmounts = formData.getAll("category_amount").map((value) => String(value).trim());
-  if (categoryIds.length !== rawCategoryAmounts.length || new Set(categoryIds).size !== categoryIds.length) {
-    return { message: "카테고리 예산 입력을 다시 확인해주세요." };
-  }
-
-  const categoryBudgets: { categoryId: string; amount: number }[] = [];
-  for (let index = 0; index < categoryIds.length; index += 1) {
-    const rawCategoryAmount = rawCategoryAmounts[index];
-    if (!rawCategoryAmount) continue;
-    if (!/^\d+$/.test(rawCategoryAmount)) {
-      return { message: "카테고리 예산은 0원 이상의 숫자로 입력해주세요." };
-    }
-    const categoryAmount = Number(rawCategoryAmount);
-    if (!Number.isSafeInteger(categoryAmount)) {
-      return { message: "카테고리 예산 금액이 너무 큽니다." };
-    }
-    categoryBudgets.push({ categoryId: categoryIds[index], amount: categoryAmount });
-  }
-
-  const allocation = categoryBudgets.reduce((sum, budget) => sum + budget.amount, 0);
-  if (!Number.isSafeInteger(allocation) || allocation > amount) {
-    return { message: "카테고리별 예산 합계는 전체 생활비보다 클 수 없습니다." };
-  }
+  const activeNames = categories.filter((category) => category.isActive).map((category) => category.name);
+  if (new Set(activeNames).size !== activeNames.length) return { message: "같은 이름의 지출 카테고리를 두 번 사용할 수 없습니다." };
+  if (activeNames.length === 0) return { message: "사용할 지출 카테고리를 하나 이상 남겨주세요." };
 
   const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { message: "로그인 상태를 다시 확인해주세요." };
 
   const { data: membership, error: membershipError } = await supabase
@@ -58,77 +55,76 @@ export async function saveMonthlyBudget(
     .select("household_id")
     .eq("user_id", user.id)
     .maybeSingle();
-  if (membershipError || !membership) {
-    return { message: "함께 쓰는 가계부를 찾을 수 없습니다." };
-  }
+  if (membershipError || !membership) return { message: "함께 쓰는 가계부를 찾을 수 없습니다." };
 
-  if (categoryBudgets.length > 0) {
-    const { data: validCategories, error: categoriesError } = await supabase
+  const existingIds = categories.map((category) => category.id).filter(Boolean);
+  if (existingIds.length > 0) {
+    const { data: existingCategories, error } = await supabase
       .from("categories")
       .select("id")
       .eq("household_id", membership.household_id)
       .eq("type", "expense")
-      .in("id", categoryBudgets.map((budget) => budget.categoryId));
-    if (categoriesError) return { message: categoriesError.message };
-    if ((validCategories ?? []).length !== categoryBudgets.length) {
-      return { message: "지출 카테고리에만 예산을 설정할 수 있습니다." };
+      .in("id", existingIds);
+    if (error) return { message: error.message };
+    if ((existingCategories ?? []).length !== new Set(existingIds).size) return { message: "수정할 수 없는 카테고리가 포함되어 있습니다." };
+  }
+
+  const monthStart = getCurrentKoreaMonth().monthStart;
+  for (let index = 0; index < categories.length; index += 1) {
+    const category = categories[index];
+    let categoryId = category.id;
+
+    if (categoryId && !category.isActive) {
+      const { error } = await supabase.from("categories").update({ is_active: false }).eq("id", categoryId).eq("household_id", membership.household_id).eq("type", "expense");
+      if (error) return { message: error.message };
+      continue;
+    }
+
+    if (categoryId) {
+      const { error } = await supabase.from("categories").update({ name: category.name, sort_order: index, is_active: true }).eq("id", categoryId).eq("household_id", membership.household_id).eq("type", "expense");
+      if (error) return { message: error.message };
+    } else {
+      const { data: sameName } = await supabase.from("categories").select("id, is_active").eq("household_id", membership.household_id).eq("type", "expense").eq("name", category.name).maybeSingle();
+      if (sameName?.is_active) return { message: `'${category.name}' 카테고리가 이미 있습니다.` };
+      if (sameName) {
+        const { error } = await supabase.from("categories").update({ is_active: true, sort_order: index }).eq("id", sameName.id);
+        if (error) return { message: error.message };
+        categoryId = sameName.id;
+      } else {
+        const { data: inserted, error } = await supabase.from("categories").insert({ household_id: membership.household_id, type: "expense", name: category.name, sort_order: index, is_active: true }).select("id").single();
+        if (error) return { message: error.message };
+        categoryId = inserted.id;
+      }
+    }
+
+    if (category.amount === null) {
+      const { error } = await supabase.from("budgets").delete().eq("household_id", membership.household_id).eq("budget_month", monthStart).eq("category_id", categoryId);
+      if (error) return { message: error.message };
+      continue;
+    }
+
+    const { data: updated, error: updateError } = await supabase.from("budgets").update({ amount: category.amount }).eq("household_id", membership.household_id).eq("budget_month", monthStart).eq("category_id", categoryId).select("id").maybeSingle();
+    if (updateError) return { message: updateError.message };
+    if (!updated) {
+      const { error } = await supabase.from("budgets").insert({ household_id: membership.household_id, budget_month: monthStart, amount: category.amount, category_id: categoryId });
+      if (error) return { message: error.message };
     }
   }
 
-  const { monthStart } = getCurrentKoreaMonth();
-  const { error: deleteError } = await supabase
-    .from("budgets")
-    .delete()
-    .eq("household_id", membership.household_id)
-    .eq("budget_month", monthStart)
-    .not("category_id", "is", null);
-  if (deleteError) return { message: deleteError.message };
+  const { data: savedBudgets, error: budgetError } = await supabase.from("budgets").select("amount").eq("household_id", membership.household_id).eq("budget_month", monthStart).not("category_id", "is", null);
+  if (budgetError) return { message: budgetError.message };
+  const total = (savedBudgets ?? []).reduce((sum, budget) => sum + Number(budget.amount), 0);
 
-  const { data: existing, error: updateError } = await supabase
-    .from("budgets")
-    .update({ amount })
-    .eq("household_id", membership.household_id)
-    .eq("budget_month", monthStart)
-    .is("category_id", null)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) return { message: updateError.message };
-
-  if (!existing) {
-    const { error: insertError } = await supabase.from("budgets").insert({
-      household_id: membership.household_id,
-      budget_month: monthStart,
-      amount,
-      category_id: null,
-    });
-
-    if (insertError?.code === "23505") {
-      const { error: retryError } = await supabase
-        .from("budgets")
-        .update({ amount })
-        .eq("household_id", membership.household_id)
-        .eq("budget_month", monthStart)
-        .is("category_id", null);
-      if (retryError) return { message: retryError.message };
-    } else if (insertError) {
-      return { message: insertError.message };
-    }
-  }
-
-  if (categoryBudgets.length > 0) {
-    const { error: categoryInsertError } = await supabase.from("budgets").insert(
-      categoryBudgets.map((budget) => ({
-        household_id: membership.household_id,
-        budget_month: monthStart,
-        amount: budget.amount,
-        category_id: budget.categoryId,
-      })),
-    );
-    if (categoryInsertError) return { message: categoryInsertError.message };
+  const { data: updatedOverall, error: overallUpdateError } = await supabase.from("budgets").update({ amount: total }).eq("household_id", membership.household_id).eq("budget_month", monthStart).is("category_id", null).select("id").maybeSingle();
+  if (overallUpdateError) return { message: overallUpdateError.message };
+  if (!updatedOverall) {
+    const { error } = await supabase.from("budgets").insert({ household_id: membership.household_id, budget_month: monthStart, amount: total, category_id: null });
+    if (error) return { message: error.message };
   }
 
   revalidatePath("/");
   revalidatePath("/budget");
-  redirect("/");
+  revalidatePath("/transactions/new");
+  revalidatePath("/monthly-summary");
+  redirect("/?view=budget");
 }

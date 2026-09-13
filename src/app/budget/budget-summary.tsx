@@ -1,139 +1,100 @@
 import Link from "next/link";
-import type { CategoryBudgetSummary, MonthlyBudgetSummary } from "@/lib/budget";
+import { getBudgetStatus, type BudgetStatusLabel, type CategoryBudgetSummary, type MonthlyBudgetSummary } from "@/lib/budget";
 import type { KoreaMonth } from "@/lib/korea-date";
 
 const won = new Intl.NumberFormat("ko-KR");
 
-type BudgetStatus = {
-  label: "여유" | "주의" | "위험" | "초과";
-  textClass: string;
-  barClass: string;
+const statusStyle: Record<BudgetStatusLabel, { text: string; bar: string }> = {
+  여유: { text: "text-emerald-700", bar: "bg-emerald-600" },
+  주의: { text: "text-amber-700", bar: "bg-amber-500" },
+  위험: { text: "text-orange-700", bar: "bg-orange-600" },
+  초과: { text: "text-red-700", bar: "bg-red-700" },
 };
 
-function budgetStatus(spent: number, budget: number): BudgetStatus {
-  if (spent > budget) return { label: "초과", textClass: "text-red-700", barClass: "bg-red-700" };
-  const rate = budget > 0 ? Math.round((spent / budget) * 100) : 0;
-  if (rate >= 85) return { label: "위험", textClass: "text-orange-700", barClass: "bg-orange-600" };
-  if (rate >= 60) return { label: "주의", textClass: "text-amber-700", barClass: "bg-amber-500" };
-  return { label: "여유", textClass: "text-emerald-700", barClass: "bg-emerald-600" };
-}
-
-function StatusProgress({ spent, budget }: { spent: number; budget: number }) {
-  const status = budgetStatus(spent, budget);
-  const rate = budget > 0 ? Math.round((spent / budget) * 100) : null;
-
-  if (budget === 0) {
+function CategoryBudgetRow({ category }: { category: CategoryBudgetSummary }) {
+  if (category.budgetAmount === null) {
     return (
-      <p className={`mt-2 text-sm font-semibold ${status.textClass}`}>
-        {spent > 0 ? `${won.format(spent)}원 초과 · 초과` : "예산 0원"}
-      </p>
+      <li className="border-t border-stone-100 py-5 first:border-t-0">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+            <p className="mt-1 text-sm text-stone-600">{won.format(category.spentAmount)}원 사용</p>
+          </div>
+          <span className="text-sm font-medium text-stone-500">예산 미설정</span>
+        </div>
+      </li>
     );
   }
 
-  return (
-    <div className="mt-3">
-      <div className="h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={`예산 사용률 ${rate}% · ${status.label}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(rate ?? 0, 100)}>
-        <div className={`h-full rounded-full ${status.barClass}`} style={{ width: `${Math.min(rate ?? 0, 100)}%` }} />
-      </div>
-      <p className={`mt-2 text-sm font-semibold ${status.textClass}`}>
-        {spent > budget ? `${won.format(spent - budget)}원 초과 · ` : `${rate}% 사용 · `}{status.label}
-      </p>
-    </div>
-  );
-}
-
-function CategoryBudgetRow({ category }: { category: CategoryBudgetSummary }) {
-  const status = category.budgetAmount === null
-    ? null
-    : budgetStatus(category.spentAmount, category.budgetAmount);
+  const budget = category.budgetAmount;
+  const spent = category.spentAmount;
+  const status = getBudgetStatus(spent, budget);
+  const rate = budget > 0 ? Math.round((spent / budget) * 100) : null;
+  const visualRate = rate === null ? (spent > 0 ? 100 : 0) : Math.min(rate, 100);
+  const over = Math.max(0, spent - budget);
+  const style = statusStyle[status];
 
   return (
-    <li className="border-t border-stone-100 py-4 first:border-t-0">
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
-        {status ? (
-          <span className={`text-sm font-bold ${status.textClass}`}>{status.label}</span>
-        ) : (
-          <span className="text-sm font-medium text-stone-500">예산 미설정</span>
-        )}
+    <li className="border-t border-stone-100 py-5 first:border-t-0">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+          <p className="mt-1 text-sm text-stone-600">{won.format(spent)}원 / {won.format(budget)}원</p>
+        </div>
+        <span className={`text-sm font-bold ${style.text}`}>{status}</span>
       </div>
-      {category.budgetAmount === null ? (
-        <p className="mt-1 text-sm text-stone-600">이번 달 사용 {won.format(category.spentAmount)}원</p>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={`${category.name} 예산 ${rate === null ? "0원" : `${rate}% 사용`} · ${status}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={visualRate}>
+        <div className={`h-full rounded-full ${style.bar}`} style={{ width: `${visualRate}%` }} />
+      </div>
+      {budget === 0 ? (
+        <p className={`mt-2 text-sm font-semibold ${style.text}`}>{spent > 0 ? `${won.format(over)}원 초과 · 초과` : "예산 0원 · 여유"}</p>
+      ) : over > 0 ? (
+        <div className={`mt-2 text-sm font-semibold ${style.text}`}><p>{rate}% 사용</p><p className="mt-1">{won.format(over)}원 초과 · 초과</p></div>
       ) : (
-        <>
-          <p className="mt-1 text-sm text-stone-600">{won.format(category.spentAmount)}원 / {won.format(category.budgetAmount)}원</p>
-          <StatusProgress spent={category.spentAmount} budget={category.budgetAmount} />
-        </>
+        <p className={`mt-2 text-sm font-semibold ${style.text}`}>{rate}% 사용 · {status}</p>
       )}
     </li>
   );
 }
 
-export function BudgetSummary({
-  month,
-  summary,
-}: {
-  month: KoreaMonth;
-  summary: MonthlyBudgetSummary;
-}) {
-  const { budgetAmount, spentAmount, categories } = summary;
-
-  if (budgetAmount === null) {
-    return (
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">{month.monthLabel}</h2>
-        <p className="mt-6 text-sm text-stone-500">이번 달 사용</p>
-        <p className="mt-1 text-3xl font-bold text-red-700">{won.format(spentAmount)}원</p>
-        <div className="mt-6 rounded-xl bg-stone-50 p-4 text-sm leading-6 text-stone-600">
-          아직 월 예산이 없습니다.<br />
-          예산을 설정하면 남은 금액과 하루 평균 사용 가능 금액을 계산해드립니다.
-        </div>
-        <Link href="/budget" className="mt-5 flex min-h-12 items-center justify-center rounded-xl border border-stone-900 font-semibold">
-          이번 달 예산 설정
-        </Link>
-      </section>
-    );
-  }
-
-  const remaining = budgetAmount - spentAmount;
-  const isOver = remaining < 0;
-  const dailyAvailable = remaining > 0
-    ? Math.floor(remaining / month.daysRemaining)
-    : 0;
+export function BudgetSummary({ month, summary }: { month: KoreaMonth; summary: MonthlyBudgetSummary }) {
+  const { budgetAmount, spentAmount, todaySpentAmount } = summary;
+  const categories = summary.categories.filter((category) => category.isActive || category.budgetAmount !== null || category.spentAmount > 0);
+  const remaining = budgetAmount === null ? null : budgetAmount - spentAmount;
+  const todayAvailable = budgetAmount === null
+    ? null
+    : Math.max(0, Math.floor(((remaining ?? 0) + todaySpentAmount) / month.daysRemaining) - todaySpentAmount);
+  const totalStatus = budgetAmount === null ? null : getBudgetStatus(spentAmount, budgetAmount);
+  const totalRate = budgetAmount && budgetAmount > 0 ? Math.round((spentAmount / budgetAmount) * 100) : null;
 
   return (
     <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-lg font-bold">{month.monthLabel}</h2>
-        <Link href="/budget" className="min-h-11 px-2 text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">예산 수정</Link>
+      <h2 className="text-lg font-bold">{month.monthLabel}</h2>
+      <p className="mt-1 text-sm text-stone-500">카테고리별 이번 달 예산과 사용액입니다.</p>
+
+      <ul className="mt-4">
+        {categories.map((category) => <CategoryBudgetRow key={category.categoryId} category={category} />)}
+      </ul>
+
+      <div className="mt-4 border-t border-stone-200 pt-5">
+        <h3 className="font-bold">이번 달 전체</h3>
+        {budgetAmount === null ? (
+          <div className="mt-4 rounded-xl bg-stone-50 p-4 text-sm leading-6 text-stone-600">
+            <p>현재 지출 <strong className="text-red-700">{won.format(spentAmount)}원</strong></p>
+            <p className="mt-2">설정된 카테고리 예산이 없습니다.</p>
+          </div>
+        ) : (
+          <dl className="mt-4 space-y-3 text-sm">
+            <div className="flex justify-between gap-4"><dt className="text-stone-600">총 예산</dt><dd className="font-semibold">{won.format(budgetAmount)}원</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-stone-600">현재 지출</dt><dd className="font-semibold text-red-700">{won.format(spentAmount)}원</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-stone-600">{remaining !== null && remaining < 0 ? "초과 금액" : "남은 금액"}</dt><dd className={`font-semibold ${remaining !== null && remaining < 0 ? "text-red-700" : ""}`}>{won.format(Math.abs(remaining ?? 0))}원</dd></div>
+            <div className="flex justify-between gap-4"><dt className="text-stone-600">전체 상태</dt><dd className={`font-semibold ${totalStatus ? statusStyle[totalStatus].text : ""}`}>{totalRate === null ? "예산 0원" : `${totalRate}%`} · {totalStatus}</dd></div>
+            <div className="border-t border-stone-100 pt-3"><dt className="text-stone-600">오늘 더 사용할 수 있는 금액</dt><dd className="mt-1 text-xl font-bold">{won.format(todayAvailable ?? 0)}원</dd><p className="mt-1 text-xs text-stone-500">오늘 사용 {won.format(todaySpentAmount)}원 반영 · 오늘 포함 {month.daysRemaining}일</p></div>
+          </dl>
+        )}
       </div>
 
-      <p className="mt-5 text-sm font-medium text-stone-500">{isOver ? "예산보다" : "남은 금액"}</p>
-      <p className={`mt-1 text-4xl font-bold tracking-tight ${isOver ? "text-red-700" : "text-stone-950"}`}>
-        {won.format(Math.abs(remaining))}원{isOver ? " 초과" : ""}
-      </p>
-
-      <div className="mt-7 border-t border-stone-100 pt-5">
-        <p className="text-sm text-stone-500">이번 달 사용</p>
-        <p className="mt-1 text-lg font-bold">
-          <span className="text-red-700">{won.format(spentAmount)}원</span>
-          <span className="font-normal text-stone-500"> / {won.format(budgetAmount)}원</span>
-        </p>
-        <StatusProgress spent={spentAmount} budget={budgetAmount} />
-      </div>
-
-      <div className="mt-5 rounded-xl bg-stone-50 p-4">
-        <p className="text-sm text-stone-600">오늘 포함 {month.daysRemaining}일 남음</p>
-        <p className="mt-1 text-sm text-stone-600">하루 평균 사용 가능 금액</p>
-        <p className="mt-1 text-xl font-bold">{won.format(dailyAvailable)}원</p>
-      </div>
-
-      <details className="mt-5 border-t border-stone-100 pt-4">
-        <summary className="min-h-11 cursor-pointer font-semibold leading-[2.75rem]">카테고리별 현황</summary>
-        <ul>
-          {categories.map((category) => <CategoryBudgetRow key={category.categoryId} category={category} />)}
-        </ul>
-      </details>
+      <Link href="/budget?returnTo=%2F%3Fview%3Dbudget" className="mt-6 flex min-h-12 items-center justify-center rounded-xl border border-stone-900 font-semibold">예산·카테고리 설정</Link>
     </section>
   );
 }
