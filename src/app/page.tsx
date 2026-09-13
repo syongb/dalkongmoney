@@ -57,9 +57,12 @@ export default async function Home({
         </section>
       ) : (
         <>
-          <section className="mt-5">
-            <p className="text-sm text-stone-500">우리 가계부</p>
-            <h2 className="mt-1 text-2xl font-bold">{household.name}</h2>
+          <section className="mt-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-stone-500">우리 가계부</p>
+              <h2 className="truncate text-xl font-bold">{household.name}</h2>
+            </div>
+            <Link href={`/transactions/new?returnTo=${encodeURIComponent(requestedView === "transactions" ? "/?view=transactions" : "/?view=budget")}`} className="flex min-h-11 shrink-0 items-center rounded-lg bg-stone-900 px-3 text-sm font-bold text-white">＋ 등록</Link>
           </section>
           <RealtimeTransactions
             key={`${month.monthStart}:${(categories ?? []).map((category) => `${category.id}:${category.name}:${category.is_active}`).join("|")}`}

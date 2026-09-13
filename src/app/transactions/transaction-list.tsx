@@ -17,7 +17,7 @@ export function TransactionList({
   returnTo?: string;
 }) {
   if (transactions.length === 0) {
-    return <p className="rounded-xl bg-stone-100 px-4 py-8 text-center text-sm text-stone-500">{emptyMessage}</p>;
+    return <p className="rounded-lg bg-stone-100 px-3 py-4 text-center text-xs text-stone-500">{emptyMessage}</p>;
   }
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
@@ -33,13 +33,13 @@ export function TransactionList({
         const typeLabel = transaction.type === "income" ? "수입" : "지출";
 
         return (
-          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={`grid min-h-16 items-center gap-3 py-2 ${showDate ? "grid-cols-[2.5rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}>
+          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={`grid min-h-12 items-center gap-2 py-1 ${showDate ? "grid-cols-[2.25rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}>
             {showDate && <span className="text-xs text-stone-500">{date}</span>}
             <span className="min-w-0">
-              <span className="block truncate font-medium">{transaction.merchant_name ?? "상호명 없음"}</span>
+              <span className="block truncate text-sm font-medium">{transaction.merchant_name ?? "상호명 없음"}</span>
               <span className="block truncate text-xs text-stone-500">{categoryNames.get(transaction.category_id) ?? "카테고리 없음"} · {spender} · {typeLabel}</span>
             </span>
-            <span className={`whitespace-nowrap text-right font-semibold ${transaction.type === "income" ? "text-blue-700" : "text-red-700"}`}>
+            <span className={`whitespace-nowrap text-right text-sm font-semibold ${transaction.type === "income" ? "text-blue-700" : "text-red-700"}`}>
               {transaction.amount.toLocaleString("ko-KR")}원
             </span>
           </Link>
