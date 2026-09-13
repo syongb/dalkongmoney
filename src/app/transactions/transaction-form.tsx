@@ -107,12 +107,12 @@ export function TransactionForm({
   }, [categoryWasChosen, householdId, merchantName, mode, selectedType, visibleCategories]);
 
   return (
-    <form action={action} className={variant === "compact" ? "space-y-3" : "space-y-4"}>
+    <form action={action} className="space-y-3">
       <fieldset>
         <legend className="text-sm font-semibold">거래 유형</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-1 grid grid-cols-2 gap-1">
           <label
-            className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-semibold ${
+            className={`flex min-h-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold ${
               selectedType === "expense"
                 ? "border-red-700 bg-red-50 text-red-700"
                 : "border-stone-300 bg-white text-stone-700"
@@ -129,7 +129,7 @@ export function TransactionForm({
             지출
           </label>
           <label
-            className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-semibold ${
+            className={`flex min-h-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold ${
               selectedType === "income"
                 ? "border-blue-700 bg-blue-50 text-blue-700"
                 : "border-stone-300 bg-white text-stone-700"
@@ -150,7 +150,7 @@ export function TransactionForm({
 
       <label className="block">
         <span className="text-sm font-semibold">{typeLabel} 금액</span>
-        <div className="mt-2 flex items-center rounded-2xl border border-stone-300 bg-white px-4 focus-within:border-stone-700">
+        <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white px-3 focus-within:border-stone-700">
           <input
             name="amount"
             type="number"
@@ -161,9 +161,9 @@ export function TransactionForm({
             autoFocus={mode === "create" && variant === "standard"}
             defaultValue={initialValues.amount || ""}
             placeholder="0"
-            className={`min-h-14 min-w-0 flex-1 bg-transparent text-right text-2xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
+            className={`min-h-11 min-w-0 flex-1 bg-transparent text-right text-xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
           />
-          <span className="ml-2 text-lg font-semibold">원</span>
+          <span className="ml-1 text-sm font-semibold">원</span>
         </div>
       </label>
 
@@ -181,17 +181,17 @@ export function TransactionForm({
             }
           }}
           placeholder="예: 스타벅스"
-          className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 outline-none focus:border-stone-700"
+          className="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm outline-none focus:border-stone-700"
         />
       </label>
 
       <fieldset>
         <legend className="text-sm font-semibold">{typeLabel} 카테고리</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-1 grid grid-cols-4 gap-1">
           {visibleCategories.map((category) => (
             <label
               key={category.id}
-              className={`flex min-h-12 cursor-pointer items-center justify-center rounded-xl border px-3 text-sm font-medium ${
+              className={`flex min-h-10 min-w-0 cursor-pointer items-center justify-center rounded-md border px-1 text-center text-[0.7rem] font-medium leading-tight ${
                 categoryId === category.id
                   ? "border-stone-900 bg-stone-900 text-white"
                   : "border-stone-300 bg-white"
@@ -219,7 +219,7 @@ export function TransactionForm({
 
       <fieldset>
         <legend className="text-sm font-semibold">누가 썼나요?</legend>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="mt-1 grid grid-cols-3 gap-1">
           <SpenderOption value={currentUserId} label={currentMember?.label ?? "구성원"} defaultChecked={initialSpender === currentUserId} />
           <SpenderOption
             value={spouse?.id ?? ""}
@@ -231,14 +231,14 @@ export function TransactionForm({
         </div>
       </fieldset>
 
-      <details className="rounded-xl border border-stone-200 bg-white p-3" open={mode === "edit"}>
+      <details className="rounded-lg border border-stone-200 bg-white p-2.5" open={mode === "edit"}>
         <summary className="cursor-pointer text-sm font-semibold">추가 옵션 · 날짜 / 메모</summary>
         <div className="mt-3 space-y-3">
           <label className="block text-sm font-medium">날짜
-            <input name="transaction_date" type="date" required defaultValue={initialValues.transaction_date} className="mt-2 min-h-12 w-full rounded-xl border border-stone-300 px-3" />
+            <input name="transaction_date" type="date" required defaultValue={initialValues.transaction_date} className="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-2 text-sm" />
           </label>
           <label className="block text-sm font-medium">메모 <span className="font-normal text-stone-500">선택</span>
-            <textarea name="memo" maxLength={500} defaultValue={initialValues.memo ?? ""} rows={3} className="mt-2 w-full rounded-xl border border-stone-300 p-3" />
+            <textarea name="memo" maxLength={500} defaultValue={initialValues.memo ?? ""} rows={2} className="mt-1 w-full rounded-lg border border-stone-300 p-2 text-sm" />
           </label>
         </div>
       </details>
@@ -266,7 +266,7 @@ function SpenderOption({
   disabled?: boolean;
 }) {
   return (
-    <label className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white text-sm font-medium ${disabled ? "opacity-40" : "cursor-pointer"}`}>
+    <label className={`flex min-h-10 items-center justify-center gap-1 rounded-md border border-stone-300 bg-white px-1 text-xs font-medium ${disabled ? "opacity-40" : "cursor-pointer"}`}>
       <input type="radio" name="spender" value={value} defaultChecked={defaultChecked} disabled={disabled} required />
       {label}
     </label>

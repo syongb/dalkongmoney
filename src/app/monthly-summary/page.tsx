@@ -19,13 +19,11 @@ const statusClass: Record<BudgetStatusLabel, string> = {
 function CategoryResult({ category }: { category: CategoryBudgetSummary }) {
   if (category.budgetAmount === null) {
     return (
-      <li className="border-t border-stone-100 py-4 first:border-t-0">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
-            <p className="mt-1 text-sm text-stone-600">{won.format(category.spentAmount)}원</p>
-          </div>
-          <span className="text-sm font-medium text-stone-500">예산 미설정</span>
+      <li className="border-t border-stone-100 py-2 first:border-t-0">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <p className="min-w-0 truncate font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+          <p className="shrink-0 text-stone-600">{won.format(category.spentAmount)}원</p>
+          <span className="shrink-0 text-stone-500">미설정</span>
         </div>
       </li>
     );
@@ -38,18 +36,11 @@ function CategoryResult({ category }: { category: CategoryBudgetSummary }) {
   const over = category.spentAmount - category.budgetAmount;
 
   return (
-    <li className="border-t border-stone-100 py-4 first:border-t-0">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
-          <p className="mt-1 text-sm text-stone-600">
-            {won.format(category.spentAmount)}원 / 예산 {won.format(category.budgetAmount)}원
-          </p>
-          {over > 0 && <p className="mt-1 text-sm font-semibold text-red-700">{won.format(over)}원 초과</p>}
-          {rate !== null && over <= 0 && <p className="mt-1 text-sm text-stone-600">{rate}% 사용</p>}
-          {category.budgetAmount === 0 && category.spentAmount === 0 && <p className="mt-1 text-sm text-stone-600">예산 0원</p>}
-        </div>
-        <span className={`text-sm font-bold ${statusClass[status]}`}>{status}</span>
+    <li className="border-t border-stone-100 py-2 first:border-t-0">
+      <div className="flex items-center justify-between gap-1.5 text-xs">
+        <p className="min-w-0 truncate font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
+        <p className="shrink-0 text-stone-600">{won.format(category.spentAmount)}/{won.format(category.budgetAmount)}</p>
+        <span className={`shrink-0 font-bold ${statusClass[status]}`}>{over > 0 ? `${won.format(over)}원 초과` : rate === null ? "예산 0원" : `${rate}%`} · {status}</span>
       </div>
     </li>
   );
@@ -147,51 +138,49 @@ export default async function MonthlySummaryPage() {
       <RealtimeRefresh householdId={membership.household_id} includeBudgets />
       <BackLink fallback="/?view=transactions" />
 
-      <header className="mt-5">
-        <p className="text-sm text-stone-500">{month.year}년 {month.month}월</p>
-        <h1 className="mt-1 text-2xl font-bold">이번 달 결산</h1>
+      <header className="mt-2 flex items-end justify-between">
+        <h1 className="text-xl font-bold">이번 달 결산</h1>
+        <p className="text-xs text-stone-500">{month.year}.{month.month}</p>
       </header>
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <p className="text-sm font-medium text-stone-500">이번 달 총지출</p>
-        <p className="mt-1 text-4xl font-bold tracking-tight text-red-700">{won.format(summary.spentAmount)}원</p>
+      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+        <div className="flex items-center justify-between"><p className="text-xs font-medium text-stone-500">총지출</p><p className="text-xl font-bold text-red-700">{won.format(summary.spentAmount)}원</p></div>
 
         {budgetAmount === null ? (
-          <div className="mt-6 rounded-xl bg-stone-50 p-4">
-            <p className="text-sm text-stone-600">전체 예산이 설정되지 않았습니다.</p>
-            <Link href="/budget" className="mt-2 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">예산 설정</Link>
+          <div className="mt-2 flex items-center justify-between rounded-lg bg-stone-50 p-2 text-xs">
+            <p className="text-stone-600">카테고리 예산 미설정</p>
+            <Link href="/budget" className="flex min-h-10 items-center font-semibold underline underline-offset-4">설정</Link>
           </div>
         ) : (
-          <div className="mt-6 border-t border-stone-100 pt-5">
-            <p className="text-sm text-stone-500">전체 예산 대비 사용액</p>
-            <p className="mt-1 text-lg font-bold">{won.format(summary.spentAmount)}원 <span className="font-normal text-stone-500">/ {won.format(budgetAmount)}원</span></p>
-            <p className={`mt-3 text-xl font-bold ${remaining !== null && remaining < 0 ? "text-red-700" : "text-stone-950"}`}>
+          <div className="mt-2 grid grid-cols-2 gap-2 border-t border-stone-100 pt-2 text-xs">
+            <p>사용/예산 <strong>{won.format(summary.spentAmount)}/{won.format(budgetAmount)}</strong></p>
+            <p className={`text-right font-bold ${remaining !== null && remaining < 0 ? "text-red-700" : "text-stone-950"}`}>
               {remaining !== null && remaining < 0
                 ? `${won.format(Math.abs(remaining))}원 초과`
                 : `남은 금액 ${won.format(remaining ?? 0)}원`}
             </p>
-            <p className={`mt-2 text-sm font-bold ${totalStatus ? statusClass[totalStatus] : ""}`}>
+            <p className={`col-span-2 text-right font-bold ${totalStatus ? statusClass[totalStatus] : ""}`}>
               {totalRate === null ? "예산 0원" : `${totalRate}% 사용`} · {totalStatus}
             </p>
           </div>
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">이번 달 가장 많이 쓴 카테고리</h2>
+      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+        <h2 className="text-sm font-bold">가장 많이 쓴 카테고리</h2>
         {topCategory && topCategory.spentAmount > 0 ? (
-          <div className="mt-4">
-            <p className="text-xl font-bold">{topCategory.name}</p>
-            <p className="mt-1 text-lg font-semibold text-red-700">{won.format(topCategory.spentAmount)}원</p>
-            <p className="mt-1 text-sm text-stone-600">전체 지출의 {topCategoryShare}%</p>
+          <div className="mt-1 flex items-center justify-between gap-2 text-xs">
+            <p className="font-bold">{topCategory.name}</p>
+            <p className="font-semibold text-red-700">{won.format(topCategory.spentAmount)}원</p>
+            <p className="text-stone-600">{topCategoryShare}%</p>
           </div>
         ) : (
           <p className="mt-3 text-sm text-stone-500">이번 달 지출이 아직 없습니다.</p>
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">카테고리별 지출</h2>
+      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+        <h2 className="text-sm font-bold">카테고리별 지출</h2>
         {visibleCategories.length > 0 ? (
           <ul className="mt-3">
             {visibleCategories.map((category) => <CategoryResult key={category.categoryId} category={category} />)}
@@ -201,26 +190,25 @@ export default async function MonthlySummaryPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">사용자별·공동 지출</h2>
-        <p className="mt-1 text-sm text-stone-500">이번 달 지출이 누구 기준으로 기록됐는지 보여주는 참고 정보입니다.</p>
-        <dl className="mt-4 space-y-3">
+      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+        <h2 className="text-sm font-bold">사용자별·공동 지출</h2>
+        <dl className="mt-2 space-y-1.5 text-xs">
           {members.map((member) => (
             <div key={member.id} className="flex items-center justify-between gap-4">
               <dt>{member.label}</dt>
               <dd className="font-semibold">{won.format(memberSpending.get(member.id) ?? 0)}원</dd>
             </div>
           ))}
-          <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-3">
+          <div className="flex items-center justify-between gap-4 border-t border-stone-100 pt-1.5">
             <dt>공동</dt>
             <dd className="font-semibold">{won.format(sharedSpending)}원</dd>
           </div>
         </dl>
       </section>
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-bold">참고 정보</h2>
-        <dl className="mt-4 space-y-3 text-sm">
+      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+        <h2 className="text-sm font-bold">참고 정보</h2>
+        <dl className="mt-2 space-y-1.5 text-xs">
           <div className="flex items-center justify-between gap-4">
             <dt className="text-stone-600">이번 달 총수입</dt>
             <dd className="font-semibold text-blue-700">{won.format(incomeTotal)}원</dd>

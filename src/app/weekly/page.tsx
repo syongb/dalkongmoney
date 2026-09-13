@@ -73,21 +73,21 @@ export default async function WeeklyPage({
       <RealtimeRefresh householdId={membership.household_id} />
       <BackLink fallback="/?view=transactions" />
 
-      <nav aria-label="주 이동" className="mt-5 grid grid-cols-2 gap-2">
-        <Link href={`/weekly?start=${shiftDateValue(weekStart, -7)}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">이전 주</Link>
-        <Link href={`/weekly?start=${nextWeekStart}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">다음 주</Link>
+      <nav aria-label="주 이동" className="mt-2 grid grid-cols-2 gap-1.5">
+        <Link href={`/weekly?start=${shiftDateValue(weekStart, -7)}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">← 이전 주</Link>
+        <Link href={`/weekly?start=${nextWeekStart}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">다음 주 →</Link>
       </nav>
-      <div className="mt-4 text-center">
-        <h1 className="text-xl font-bold">{shortDate(weekStart)} ~ {shortDate(weekEnd)}</h1>
-        <Link href="/weekly" aria-current={weekStart === currentWeekStart ? "date" : undefined} className="mt-1 inline-flex min-h-11 items-center px-4 text-sm text-stone-600 underline underline-offset-4">이번 주</Link>
+      <div className="mt-2 flex min-h-10 items-center justify-between gap-2">
+        <h1 className="text-sm font-bold">{shortDate(weekStart)} ~ {shortDate(weekEnd)}</h1>
+        <Link href="/weekly" aria-current={weekStart === currentWeekStart ? "date" : undefined} className="flex min-h-10 items-center px-2 text-xs text-stone-600 underline underline-offset-4">이번 주</Link>
       </div>
 
-      <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm">
-        <p className="text-sm font-medium text-stone-500">이번 주 지출</p>
-        <p className="mt-1 text-4xl font-bold tracking-tight text-red-700">{won.format(weeklyTotal)}원</p>
+      <section className="mt-2 flex items-center justify-between rounded-lg bg-white p-3 shadow-sm">
+        <p className="text-xs font-medium text-stone-500">이번 주 지출</p>
+        <p className="text-lg font-bold text-red-700">{won.format(weeklyTotal)}원</p>
       </section>
 
-      <section className="mt-6 overflow-hidden rounded-2xl bg-white px-4 shadow-sm">
+      <section className="mt-2 overflow-hidden rounded-lg bg-white px-2 shadow-sm">
         {days.map((date, index) => {
           const isToday = date === today;
           const spent = dailySpending.get(date) ?? 0;
@@ -96,12 +96,11 @@ export default async function WeeklyPage({
               key={date}
               href={`/daily?date=${date}&returnTo=${encodeURIComponent(`/weekly?start=${weekStart}`)}`}
               aria-label={`${weekdayLabels[index]}요일 ${shortDate(date)}${isToday ? " 오늘" : ""}, 지출 ${won.format(spent)}원`}
-              className={`flex min-h-16 items-center justify-between gap-4 border-t border-stone-100 px-2 first:border-t-0 ${isToday ? "bg-stone-100 font-bold" : ""}`}
+              className={`flex min-h-11 items-center justify-between gap-2 border-t border-stone-100 px-2 text-sm first:border-t-0 ${isToday ? "bg-stone-100 font-bold" : ""}`}
             >
               <span>
-                <span>{weekdayLabels[index]}요일</span>
-                <span className="ml-2 text-sm text-stone-500">{Number(date.slice(5, 7))}/{Number(date.slice(8, 10))}</span>
-                {isToday && <span className="ml-2 rounded-full bg-stone-900 px-2 py-1 text-xs font-bold text-white">오늘</span>}
+                <span>{Number(date.slice(5, 7))}/{Number(date.slice(8, 10))} {weekdayLabels[index]}</span>
+                {isToday && <span className="ml-1 rounded bg-stone-900 px-1.5 py-0.5 text-[0.65rem] font-bold text-white">오늘</span>}
               </span>
               <span className="font-semibold text-red-700">{won.format(spent)}원</span>
             </Link>

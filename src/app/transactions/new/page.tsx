@@ -34,9 +34,9 @@ export default async function NewTransactionPage({
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">
       <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} />
       <BackLink fallback={returnTo} />
-      <h1 className="mt-4 text-2xl font-bold">거래 등록</h1>
-      <p className="mt-2 text-sm text-stone-500">금액과 카테고리만 선택해도 저장할 수 있습니다.</p>
-      <div className="mt-8">
+      <h1 className="mt-2 text-xl font-bold">거래 등록</h1>
+      <p className="mt-1 text-xs text-stone-500">금액과 카테고리만 선택해도 됩니다.</p>
+      <div className="mt-3">
         <TransactionForm
           mode="create"
           householdId={membership.household_id}

@@ -58,19 +58,19 @@ export default async function CalendarPage({
       <RealtimeRefresh householdId={membership.household_id} />
       <BackLink fallback="/?view=transactions" />
 
-      <nav aria-label="월 이동" className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <Link href={`/calendar?month=${shiftKoreaMonth(month.monthStart, -1)}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">이전 달</Link>
-        <h1 className="px-2 text-center text-lg font-bold">{month.year}년 {month.month}월</h1>
-        <Link href={`/calendar?month=${shiftKoreaMonth(month.monthStart, 1)}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">다음 달</Link>
+      <nav aria-label="월 이동" className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+        <Link href={`/calendar?month=${shiftKoreaMonth(month.monthStart, -1)}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">← 이전</Link>
+        <h1 className="px-1 text-center text-sm font-bold">{month.year}.{month.month}</h1>
+        <Link href={`/calendar?month=${shiftKoreaMonth(month.monthStart, 1)}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">다음 →</Link>
       </nav>
 
-      <div className="mt-3 text-center">
-        <Link href="/calendar" aria-current={monthValue === today.slice(0, 7) ? "date" : undefined} className="inline-flex min-h-11 items-center px-4 text-sm text-stone-600 underline underline-offset-4">오늘</Link>
+      <div className="text-center">
+        <Link href="/calendar" aria-current={monthValue === today.slice(0, 7) ? "date" : undefined} className="inline-flex min-h-10 items-center px-2 text-xs text-stone-600 underline underline-offset-4">오늘</Link>
       </div>
 
-      <section className="mt-6 rounded-2xl bg-white p-3 shadow-sm">
+      <section className="mt-1 rounded-lg bg-white p-2 shadow-sm">
         <div className="grid grid-cols-7 text-center text-xs font-semibold text-stone-500">
-          {weekdays.map((weekday) => <div key={weekday} className="py-2">{weekday}</div>)}
+          {weekdays.map((weekday) => <div key={weekday} className="py-1">{weekday}</div>)}
         </div>
         <div className="grid grid-cols-7 gap-1">
           {Array.from({ length: leadingBlanks }, (_, index) => <div key={`blank-${index}`} />)}
@@ -84,10 +84,10 @@ export default async function CalendarPage({
                 key={date}
                 href={`/daily?date=${date}&returnTo=${encodeURIComponent(`/calendar?month=${monthValue}`)}`}
                 aria-label={`${month.month}월 ${day}일 지출 ${won.format(spent)}원`}
-                className={`flex min-h-20 min-w-0 flex-col rounded-lg px-1 py-2 text-center ${isToday ? "bg-stone-900 text-white" : "bg-stone-50 hover:bg-stone-100"}`}
+                className={`flex min-h-14 min-w-0 flex-col rounded-md px-0.5 py-1 text-center ${isToday ? "bg-stone-900 text-white" : "bg-stone-50 hover:bg-stone-100"}`}
               >
                 <span className="text-sm font-semibold">{day}</span>
-                {spent > 0 && <span className={`mt-2 truncate text-[0.68rem] font-semibold ${isToday ? "text-red-200" : "text-red-700"}`}>{won.format(spent)}</span>}
+                {spent > 0 && <span className={`mt-1 truncate text-[0.58rem] font-semibold ${isToday ? "text-red-200" : "text-red-700"}`}>{won.format(spent)}</span>}
               </Link>
             );
           })}

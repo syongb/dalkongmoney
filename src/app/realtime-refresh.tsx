@@ -48,6 +48,7 @@ export function RealtimeRefresh({
             .channel(`household:${householdId}:transactions`, { config: { private: true } })
           if (includeTransactions) transactionChannel.on("broadcast", { event: "transaction_changed" }, requestRefresh);
           if (includeCategories) transactionChannel.on("broadcast", { event: "category_changed" }, requestRefresh);
+          transactionChannel.on("broadcast", { event: "household_changed" }, requestRefresh);
           transactionChannel.subscribe();
         }
 
@@ -56,6 +57,7 @@ export function RealtimeRefresh({
             .channel(`household:${householdId}:budgets`, { config: { private: true } })
             .on("broadcast", { event: "budget_changed" }, requestRefresh)
           if (includeCategories) budgetChannel.on("broadcast", { event: "category_changed" }, requestRefresh);
+          budgetChannel.on("broadcast", { event: "household_changed" }, requestRefresh);
           budgetChannel.subscribe();
         }
       } catch {

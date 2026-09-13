@@ -140,6 +140,7 @@ export function RealtimeTransactions({
             })
             .on("broadcast", { event: "transaction_changed" }, requestRefresh)
             .on("broadcast", { event: "category_changed" }, requestServerRefresh)
+            .on("broadcast", { event: "household_changed" }, requestServerRefresh)
             .subscribe();
         }
 
@@ -150,6 +151,7 @@ export function RealtimeTransactions({
             })
             .on("broadcast", { event: "budget_changed" }, requestRefresh)
             .on("broadcast", { event: "category_changed" }, requestServerRefresh)
+            .on("broadcast", { event: "household_changed" }, requestServerRefresh)
             .subscribe();
         }
       } catch {
