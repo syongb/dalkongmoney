@@ -69,7 +69,7 @@ export default async function WeeklyPage({
   const days = Array.from({ length: 7 }, (_, index) => shiftDateValue(weekStart, index));
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-8">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <RealtimeRefresh householdId={membership.household_id} />
       <BackLink fallback="/?view=transactions" />
 
@@ -82,7 +82,7 @@ export default async function WeeklyPage({
         <Link href="/weekly" aria-current={weekStart === currentWeekStart ? "date" : undefined} className="flex min-h-10 items-center px-2 text-xs text-stone-600 underline underline-offset-4">이번 주</Link>
       </div>
 
-      <section className="mt-2 flex items-center justify-between rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 flex items-center justify-between rounded-lg bg-white p-2.5 shadow-sm">
         <p className="text-xs font-medium text-stone-500">이번 주 지출</p>
         <p className="text-lg font-bold text-red-700">{won.format(weeklyTotal)}원</p>
       </section>
@@ -96,7 +96,7 @@ export default async function WeeklyPage({
               key={date}
               href={`/daily?date=${date}&returnTo=${encodeURIComponent(`/weekly?start=${weekStart}`)}`}
               aria-label={`${weekdayLabels[index]}요일 ${shortDate(date)}${isToday ? " 오늘" : ""}, 지출 ${won.format(spent)}원`}
-              className={`flex min-h-11 items-center justify-between gap-2 border-t border-stone-100 px-2 text-sm first:border-t-0 ${isToday ? "bg-stone-100 font-bold" : ""}`}
+              className={`flex min-h-10 items-center justify-between gap-2 border-t border-stone-100 px-2 text-xs first:border-t-0 ${isToday ? "bg-stone-100 font-bold" : ""}`}
             >
               <span>
                 <span>{Number(date.slice(5, 7))}/{Number(date.slice(8, 10))} {weekdayLabels[index]}</span>

@@ -41,12 +41,12 @@ export default async function Home({
     : [{ data: [] }, { data: [] }, [], { data: null }, { data: [] }];
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-10">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <header className="flex items-center justify-between">
-        <div><p className="text-sm text-stone-500">안녕하세요</p><h1 className="text-xl font-bold">{profile?.display_name ?? user.email}</h1></div>
+        <div className="min-w-0"><p className="text-xs text-stone-500">안녕하세요</p><h1 className="truncate text-lg font-bold">{profile?.display_name ?? user.email}</h1></div>
         <div className="flex items-center gap-1">
-          <Link href="/settings" className="min-h-11 px-3 text-sm leading-[2.75rem] underline">설정</Link>
-          <form action={signOut}><button className="min-h-11 px-3 text-sm underline">로그아웃</button></form>
+          <Link href="/settings" className="min-h-10 px-2 text-xs leading-10 underline">설정</Link>
+          <form action={signOut}><button className="min-h-10 px-2 text-xs underline">로그아웃</button></form>
         </div>
       </header>
       {!household ? (
@@ -57,12 +57,12 @@ export default async function Home({
         </section>
       ) : (
         <>
-          <section className="mt-4 flex items-center justify-between gap-3">
+          <section className="mt-2 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-xs text-stone-500">우리 가계부</p>
-              <h2 className="truncate text-xl font-bold">{household.name}</h2>
+              <h2 className="truncate text-lg font-bold">{household.name}</h2>
             </div>
-            <Link href={`/transactions/new?returnTo=${encodeURIComponent(requestedView === "transactions" ? "/?view=transactions" : "/?view=budget")}`} className="flex min-h-11 shrink-0 items-center rounded-lg bg-stone-900 px-3 text-sm font-bold text-white">＋ 등록</Link>
+            <Link href={`/transactions/new?returnTo=${encodeURIComponent(requestedView === "transactions" ? "/?view=transactions" : "/?view=budget")}`} className="flex min-h-10 shrink-0 items-center rounded-lg bg-stone-900 px-3 text-xs font-bold text-white">＋ 등록</Link>
           </section>
           <RealtimeTransactions
             key={`${month.monthStart}:${(categories ?? []).map((category) => `${category.id}:${category.name}:${category.is_active}`).join("|")}`}
@@ -75,9 +75,9 @@ export default async function Home({
             initialHomeTab={requestedView === "transactions" ? "transactions" : "budget"}
             initialBudgetSummary={buildMonthlyBudgetSummary(categories ?? [], budgets, expenses, today)}
           />
-          <details className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-            <summary className="min-h-11 cursor-pointer font-semibold leading-[2.75rem]">가계부 정보</summary>
-            <p className="mt-2 text-sm text-stone-600">{membership?.role === "owner" ? "관리자" : "구성원"} · {household.currency_code}</p>
+          <details className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
+            <summary className="min-h-10 cursor-pointer text-sm font-semibold leading-10">가계부 정보</summary>
+            <p className="mt-1 text-xs text-stone-600">{membership?.role === "owner" ? "관리자" : "구성원"} · {household.currency_code}</p>
             {membership?.role === "owner" && <InviteForm />}
           </details>
         </>

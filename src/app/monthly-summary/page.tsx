@@ -19,7 +19,7 @@ const statusClass: Record<BudgetStatusLabel, string> = {
 function CategoryResult({ category }: { category: CategoryBudgetSummary }) {
   if (category.budgetAmount === null) {
     return (
-      <li className="border-t border-stone-100 py-2 first:border-t-0">
+      <li className="border-t border-stone-100 py-1.5 first:border-t-0">
         <div className="flex items-center justify-between gap-2 text-xs">
           <p className="min-w-0 truncate font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
           <p className="shrink-0 text-stone-600">{won.format(category.spentAmount)}원</p>
@@ -36,11 +36,15 @@ function CategoryResult({ category }: { category: CategoryBudgetSummary }) {
   const over = category.spentAmount - category.budgetAmount;
 
   return (
-    <li className="border-t border-stone-100 py-2 first:border-t-0">
+    <li className="border-t border-stone-100 py-1.5 first:border-t-0">
       <div className="flex items-center justify-between gap-1.5 text-xs">
         <p className="min-w-0 truncate font-semibold">{category.name}{category.isActive ? "" : " (비활성)"}</p>
         <p className="shrink-0 text-stone-600">{won.format(category.spentAmount)}/{won.format(category.budgetAmount)}</p>
-        <span className={`shrink-0 font-bold ${statusClass[status]}`}>{over > 0 ? `${won.format(over)}원 초과` : rate === null ? "예산 0원" : `${rate}%`} · {status}</span>
+        <span className={`shrink-0 font-bold ${statusClass[status]}`}>
+          {category.budgetAmount === 0
+            ? category.spentAmount > 0 ? `${won.format(over)}원 초과` : "예산 0원"
+            : over > 0 ? `${won.format(over)}원 초과 · ${status}` : `${rate}% · ${status}`}
+        </span>
       </div>
     </li>
   );
@@ -62,9 +66,7 @@ export default async function MonthlySummaryPage() {
   const [
     { data: categories },
     { data: budgets },
-    { data: expenses },
-    { data: incomes },
-    { count: transactionCount },
+    { data: monthlyTransactions },
     members,
   ] = await Promise.all([
     supabase
@@ -79,27 +81,16 @@ export default async function MonthlySummaryPage() {
       .eq("budget_month", month.monthStart),
     supabase
       .from("transactions")
-      .select("amount, category_id, spent_by, is_shared")
-      .eq("household_id", membership.household_id)
-      .eq("type", "expense")
-      .gte("transaction_date", month.monthStart)
-      .lt("transaction_date", month.nextMonthStart),
-    supabase
-      .from("transactions")
-      .select("amount")
-      .eq("household_id", membership.household_id)
-      .eq("type", "income")
-      .gte("transaction_date", month.monthStart)
-      .lt("transaction_date", month.nextMonthStart),
-    supabase
-      .from("transactions")
-      .select("id", { count: "exact", head: true })
+      .select("amount, type, category_id, spent_by, is_shared")
       .eq("household_id", membership.household_id)
       .gte("transaction_date", month.monthStart)
       .lt("transaction_date", month.nextMonthStart),
     getHouseholdMemberOptions(supabase, membership.household_id),
   ]);
 
+  const expenses = (monthlyTransactions ?? []).filter((transaction) => transaction.type === "expense");
+  const incomes = (monthlyTransactions ?? []).filter((transaction) => transaction.type === "income");
+  const transactionCount = monthlyTransactions?.length ?? 0;
   const summary = buildMonthlyBudgetSummary(categories ?? [], budgets, expenses);
   const incomeTotal = sumAmounts(incomes);
   const visibleCategories = summary.categories.filter(
@@ -134,7 +125,7 @@ export default async function MonthlySummaryPage() {
     : null;
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-8">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <RealtimeRefresh householdId={membership.household_id} includeBudgets />
       <BackLink fallback="/?view=transactions" />
 
@@ -143,7 +134,7 @@ export default async function MonthlySummaryPage() {
         <p className="text-xs text-stone-500">{month.year}.{month.month}</p>
       </header>
 
-      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
         <div className="flex items-center justify-between"><p className="text-xs font-medium text-stone-500">총지출</p><p className="text-xl font-bold text-red-700">{won.format(summary.spentAmount)}원</p></div>
 
         {budgetAmount === null ? (
@@ -160,13 +151,15 @@ export default async function MonthlySummaryPage() {
                 : `남은 금액 ${won.format(remaining ?? 0)}원`}
             </p>
             <p className={`col-span-2 text-right font-bold ${totalStatus ? statusClass[totalStatus] : ""}`}>
-              {totalRate === null ? "예산 0원" : `${totalRate}% 사용`} · {totalStatus}
+              {totalRate === null
+                ? summary.spentAmount > 0 ? `${won.format(summary.spentAmount)}원 초과` : "예산 0원"
+                : `${totalRate}% 사용 · ${totalStatus}`}
             </p>
           </div>
         )}
       </section>
 
-      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
         <h2 className="text-sm font-bold">가장 많이 쓴 카테고리</h2>
         {topCategory && topCategory.spentAmount > 0 ? (
           <div className="mt-1 flex items-center justify-between gap-2 text-xs">
@@ -175,22 +168,22 @@ export default async function MonthlySummaryPage() {
             <p className="text-stone-600">{topCategoryShare}%</p>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-stone-500">이번 달 지출이 아직 없습니다.</p>
+          <p className="mt-2 text-xs text-stone-500">이번 달 지출이 아직 없습니다.</p>
         )}
       </section>
 
-      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
         <h2 className="text-sm font-bold">카테고리별 지출</h2>
         {visibleCategories.length > 0 ? (
-          <ul className="mt-3">
+          <ul className="mt-2">
             {visibleCategories.map((category) => <CategoryResult key={category.categoryId} category={category} />)}
           </ul>
         ) : (
-          <p className="mt-3 text-sm text-stone-500">표시할 카테고리 지출이나 예산이 없습니다.</p>
+          <p className="mt-2 text-xs text-stone-500">표시할 카테고리 지출이나 예산이 없습니다.</p>
         )}
       </section>
 
-      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
         <h2 className="text-sm font-bold">사용자별·공동 지출</h2>
         <dl className="mt-2 space-y-1.5 text-xs">
           {members.map((member) => (
@@ -206,7 +199,7 @@ export default async function MonthlySummaryPage() {
         </dl>
       </section>
 
-      <section className="mt-3 rounded-lg bg-white p-3 shadow-sm">
+      <section className="mt-2 rounded-lg bg-white p-2.5 shadow-sm">
         <h2 className="text-sm font-bold">참고 정보</h2>
         <dl className="mt-2 space-y-1.5 text-xs">
           <div className="flex items-center justify-between gap-4">

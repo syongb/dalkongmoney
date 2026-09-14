@@ -107,9 +107,11 @@ export function TransactionForm({
   }, [categoryWasChosen, householdId, merchantName, mode, selectedType, visibleCategories]);
 
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="space-y-2">
+      <input type="hidden" name="household_id" value={householdId} />
+      <input type="hidden" name="return_to" value={cancelHref ?? (mode === "create" ? "/" : "/transactions")} />
       <fieldset>
-        <legend className="text-sm font-semibold">거래 유형</legend>
+        <legend className="text-xs font-semibold">거래 유형</legend>
         <div className="mt-1 grid grid-cols-2 gap-1">
           <label
             className={`flex min-h-10 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-semibold ${
@@ -149,8 +151,8 @@ export function TransactionForm({
       </fieldset>
 
       <label className="block">
-        <span className="text-sm font-semibold">{typeLabel} 금액</span>
-        <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white px-3 focus-within:border-stone-700">
+        <span className="text-xs font-semibold">{typeLabel} 금액</span>
+        <div className="mt-1 flex items-center rounded-lg border border-stone-300 bg-white px-2.5 focus-within:border-stone-700">
           <input
             name="amount"
             type="number"
@@ -161,14 +163,14 @@ export function TransactionForm({
             autoFocus={mode === "create" && variant === "standard"}
             defaultValue={initialValues.amount || ""}
             placeholder="0"
-            className={`min-h-11 min-w-0 flex-1 bg-transparent text-right text-xl font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
+            className={`min-h-10 min-w-0 flex-1 bg-transparent text-right text-lg font-bold outline-none ${selectedType === "income" ? "text-blue-700" : "text-red-700"}`}
           />
           <span className="ml-1 text-sm font-semibold">원</span>
         </div>
       </label>
 
       <label className="block">
-        <span className="text-sm font-semibold">상호명 <span className="font-normal text-stone-500">선택</span></span>
+        <span className="text-xs font-semibold">상호명 <span className="font-normal text-stone-500">선택</span></span>
         <input
           name="merchant_name"
           maxLength={100}
@@ -181,12 +183,12 @@ export function TransactionForm({
             }
           }}
           placeholder="예: 스타벅스"
-          className="mt-1 min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 text-sm outline-none focus:border-stone-700"
+          className="mt-1 min-h-10 w-full rounded-lg border border-stone-300 bg-white px-2.5 text-sm outline-none focus:border-stone-700"
         />
       </label>
 
       <fieldset>
-        <legend className="text-sm font-semibold">{typeLabel} 카테고리</legend>
+        <legend className="text-xs font-semibold">{typeLabel} 카테고리</legend>
         <div className="mt-1 grid grid-cols-4 gap-1">
           {visibleCategories.map((category) => (
             <label
@@ -214,11 +216,11 @@ export function TransactionForm({
             </label>
           ))}
         </div>
-        {suggestion && <p className="mt-2 text-sm text-emerald-700">{suggestion}</p>}
+        {suggestion && <p className="mt-1 text-xs text-emerald-700">{suggestion}</p>}
       </fieldset>
 
       <fieldset>
-        <legend className="text-sm font-semibold">누가 썼나요?</legend>
+        <legend className="text-xs font-semibold">누가 썼나요?</legend>
         <div className="mt-1 grid grid-cols-3 gap-1">
           <SpenderOption value={currentUserId} label={currentMember?.label ?? "구성원"} defaultChecked={initialSpender === currentUserId} />
           <SpenderOption
@@ -231,24 +233,24 @@ export function TransactionForm({
         </div>
       </fieldset>
 
-      <details className="rounded-lg border border-stone-200 bg-white p-2.5" open={mode === "edit"}>
-        <summary className="cursor-pointer text-sm font-semibold">추가 옵션 · 날짜 / 메모</summary>
-        <div className="mt-3 space-y-3">
-          <label className="block text-sm font-medium">날짜
-            <input name="transaction_date" type="date" required defaultValue={initialValues.transaction_date} className="mt-1 min-h-11 w-full rounded-lg border border-stone-300 px-2 text-sm" />
+      <details className="rounded-lg border border-stone-200 bg-white p-2" open={mode === "edit"}>
+        <summary className="min-h-8 cursor-pointer text-xs font-semibold leading-8">추가 옵션 · 날짜 / 메모</summary>
+        <div className="mt-2 space-y-2">
+          <label className="block text-xs font-medium">날짜
+            <input name="transaction_date" type="date" required defaultValue={initialValues.transaction_date} className="mt-1 min-h-10 w-full rounded-lg border border-stone-300 px-2 text-sm" />
           </label>
-          <label className="block text-sm font-medium">메모 <span className="font-normal text-stone-500">선택</span>
-            <textarea name="memo" maxLength={500} defaultValue={initialValues.memo ?? ""} rows={2} className="mt-1 w-full rounded-lg border border-stone-300 p-2 text-sm" />
+          <label className="block text-xs font-medium">메모 <span className="font-normal text-stone-500">선택</span>
+            <textarea name="memo" maxLength={500} defaultValue={initialValues.memo ?? ""} rows={1} className="mt-1 w-full rounded-lg border border-stone-300 p-2 text-sm" />
           </label>
         </div>
       </details>
 
       {state.message && <p role="status" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{state.message}</p>}
-      <button disabled={pending || visibleCategories.length === 0} className="min-h-12 w-full rounded-xl bg-stone-900 px-4 font-bold text-white disabled:opacity-50">
+      <button disabled={pending || visibleCategories.length === 0} className="min-h-10 w-full rounded-lg bg-stone-900 px-4 text-sm font-bold text-white disabled:opacity-50">
         {pending ? "저장하는 중…" : mode === "create" ? "저장" : "수정 저장"}
       </button>
       {variant === "standard" && (
-        <Link href={cancelHref ?? (mode === "create" ? "/" : "/transactions")} className="block min-h-11 text-center text-sm leading-[2.75rem] text-stone-600 underline underline-offset-4">취소</Link>
+        <Link href={cancelHref ?? (mode === "create" ? "/" : "/transactions")} className="block min-h-10 text-center text-xs leading-10 text-stone-600 underline underline-offset-4">취소</Link>
       )}
     </form>
   );

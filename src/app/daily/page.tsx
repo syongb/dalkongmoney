@@ -54,14 +54,14 @@ export default async function DailyPage({
   const isToday = selectedDate === today;
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-8">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <RealtimeRefresh householdId={membership.household_id} />
       <BackLink fallback={returnTo} />
 
-      <nav aria-label="날짜 이동" className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-        <Link href={`/daily?date=${shiftDateValue(selectedDate, -1)}${returnQuery}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">이전 날</Link>
-        <p className="px-2 text-center font-bold">{formatKoreaDateLabel(selectedDate)}</p>
-        <Link href={`/daily?date=${shiftDateValue(selectedDate, 1)}${returnQuery}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold shadow-sm">다음 날</Link>
+      <nav aria-label="날짜 이동" className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-1.5">
+        <Link href={`/daily?date=${shiftDateValue(selectedDate, -1)}${returnQuery}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">이전 날</Link>
+        <p className="px-1 text-center text-sm font-bold">{formatKoreaDateLabel(selectedDate)}</p>
+        <Link href={`/daily?date=${shiftDateValue(selectedDate, 1)}${returnQuery}`} className="flex min-h-10 items-center justify-center rounded-lg bg-white px-2 text-xs font-semibold shadow-sm">다음 날</Link>
       </nav>
 
       {!isToday && (
@@ -70,16 +70,15 @@ export default async function DailyPage({
         </div>
       )}
 
-      <section className="mt-6 rounded-2xl bg-white p-5 shadow-sm">
-        <p className="text-sm font-medium text-stone-500">{isToday ? "오늘 지출" : "이날 지출"}</p>
-        <p className="mt-1 text-4xl font-bold tracking-tight text-red-700">{expenseTotal.toLocaleString("ko-KR")}원</p>
-        <p className="mt-4 text-sm text-stone-600">
+      <section className="mt-2 rounded-lg bg-white p-3 shadow-sm">
+        <div className="flex items-center justify-between gap-2"><p className="text-xs font-medium text-stone-500">{isToday ? "오늘 지출" : "이날 지출"}</p><p className="text-2xl font-bold tracking-tight text-red-700">{expenseTotal.toLocaleString("ko-KR")}원</p></div>
+        <p className="mt-1 text-xs text-stone-600">
           수입 <span className="font-semibold text-blue-700">{incomeTotal.toLocaleString("ko-KR")}원</span> · 거래 {rows.length}건
         </p>
       </section>
 
-      <section className="mt-6 rounded-2xl bg-white px-4 py-5 shadow-sm">
-        <h1 className="mb-3 text-lg font-bold">{isToday ? "오늘 거래" : "이날 거래"}</h1>
+      <section className="mt-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+        <h1 className="mb-1 text-sm font-bold">{isToday ? "오늘 거래" : "이날 거래"}</h1>
         <TransactionList
           transactions={rows}
           categories={categories ?? []}

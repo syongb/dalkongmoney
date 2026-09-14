@@ -161,6 +161,17 @@ export function RealtimeTransactions({
       }
     }
 
+    async function reconnect() {
+      if (!active) return;
+      const channels = [transactionChannel, budgetChannel].filter(
+        (channel): channel is NonNullable<typeof channel> => channel !== null,
+      );
+      transactionChannel = null;
+      budgetChannel = null;
+      await Promise.all(channels.map((channel) => supabase.removeChannel(channel)));
+      if (active) await subscribe();
+    }
+
     function recover() {
       if (
         variant === "home" &&
@@ -171,7 +182,7 @@ export function RealtimeTransactions({
         return;
       }
       requestRefresh();
-      if (!transactionChannel || (variant === "home" && !budgetChannel)) void subscribe();
+      void reconnect();
     }
 
     window.addEventListener("online", recover);
@@ -201,29 +212,29 @@ export function RealtimeTransactions({
   if (variant === "home") {
     const selectHomeTab = (nextTab: "budget" | "transactions") => {
       setHomeTab(nextTab);
-      router.replace(`/?view=${nextTab}`, { scroll: false });
+      window.history.replaceState(null, "", `/?view=${nextTab}`);
     };
 
     return (
       <>
-        <div role="tablist" aria-label="홈 보기 선택" className="mt-3 grid grid-cols-2 rounded-lg bg-stone-200 p-0.5">
-          <button type="button" role="tab" aria-selected={homeTab === "budget"} onClick={() => selectHomeTab("budget")} className={`min-h-11 rounded-md text-sm font-semibold ${homeTab === "budget" ? "bg-white shadow-sm" : "text-stone-600"}`}>예산</button>
-          <button type="button" role="tab" aria-selected={homeTab === "transactions"} onClick={() => selectHomeTab("transactions")} className={`min-h-11 rounded-md text-sm font-semibold ${homeTab === "transactions" ? "bg-white shadow-sm" : "text-stone-600"}`}>거래 내역</button>
+        <div role="tablist" aria-label="홈 보기 선택" className="mt-2 grid grid-cols-2 rounded-lg bg-stone-200 p-0.5">
+          <button type="button" role="tab" aria-selected={homeTab === "budget"} onClick={() => selectHomeTab("budget")} className={`min-h-10 rounded-md text-xs font-semibold ${homeTab === "budget" ? "bg-white shadow-sm" : "text-stone-600"}`}>예산</button>
+          <button type="button" role="tab" aria-selected={homeTab === "transactions"} onClick={() => selectHomeTab("transactions")} className={`min-h-10 rounded-md text-xs font-semibold ${homeTab === "transactions" ? "bg-white shadow-sm" : "text-stone-600"}`}>거래 내역</button>
         </div>
 
         {homeTab === "budget" ? (
           month && <BudgetSummary month={month} summary={budgetSummary} />
         ) : (
           <>
-            <nav aria-label="거래 내역 조회" className="mt-3 grid grid-cols-3 gap-1.5">
-              <Link href="/weekly" className="flex min-h-11 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">주간</Link>
-              <Link href="/calendar" className="flex min-h-11 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">달력</Link>
-              <Link href="/monthly-summary" className="flex min-h-11 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">월간 결산</Link>
+            <nav aria-label="거래 내역 조회" className="mt-2 grid grid-cols-3 gap-1.5">
+              <Link href="/weekly" className="flex min-h-10 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">주간</Link>
+              <Link href="/calendar" className="flex min-h-10 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">달력</Link>
+              <Link href="/monthly-summary" className="flex min-h-10 items-center justify-center rounded-lg bg-white px-1 text-center text-xs font-semibold shadow-sm">월간 결산</Link>
             </nav>
-            <section className="mt-4 rounded-xl bg-white px-3 py-3 shadow-sm">
+            <section className="mt-2 rounded-lg bg-white px-3 py-2 shadow-sm">
               <div className="mb-1 flex items-center justify-between">
-                <h2 className="font-bold">최근 거래</h2>
-                <Link href="/transactions" className="min-h-11 px-1 text-xs leading-[2.75rem] text-stone-600 underline underline-offset-4">전체 보기</Link>
+                <h2 className="text-sm font-bold">최근 거래</h2>
+                <Link href="/transactions" className="min-h-10 px-1 text-xs leading-10 text-stone-600 underline underline-offset-4">전체 보기</Link>
               </div>
               <TransactionList transactions={transactions} categories={categories} members={members} returnTo="/?view=transactions" />
             </section>
@@ -235,11 +246,11 @@ export function RealtimeTransactions({
 
   return (
     <>
-      <div className="mt-4 flex items-end justify-between">
-        <div><p className="text-sm text-stone-500">우리 가계부</p><h1 className="text-2xl font-bold">거래 내역</h1></div>
-        <span className="text-sm text-stone-500">{transactions.length}건</span>
+      <div className="mt-2 flex items-end justify-between">
+        <div><p className="text-xs text-stone-500">우리 가계부</p><h1 className="text-xl font-bold">거래 내역</h1></div>
+        <span className="text-xs text-stone-500">{transactions.length}건</span>
       </div>
-      <section className="mt-6 rounded-2xl bg-white px-4 shadow-sm">
+      <section className="mt-3 rounded-lg bg-white px-3 shadow-sm">
         <TransactionList transactions={transactions} categories={categories} members={members} />
       </section>
     </>

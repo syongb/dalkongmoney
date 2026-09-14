@@ -54,7 +54,7 @@ export default async function CalendarPage({
   const monthValue = month.monthStart.slice(0, 7);
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-8">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <RealtimeRefresh householdId={membership.household_id} />
       <BackLink fallback="/?view=transactions" />
 
@@ -84,7 +84,7 @@ export default async function CalendarPage({
                 key={date}
                 href={`/daily?date=${date}&returnTo=${encodeURIComponent(`/calendar?month=${monthValue}`)}`}
                 aria-label={`${month.month}월 ${day}일 지출 ${won.format(spent)}원`}
-                className={`flex min-h-14 min-w-0 flex-col rounded-md px-0.5 py-1 text-center ${isToday ? "bg-stone-900 text-white" : "bg-stone-50 hover:bg-stone-100"}`}
+                className={`flex min-h-12 min-w-0 flex-col rounded-md px-0.5 py-1 text-center ${isToday ? "bg-stone-900 text-white" : "bg-stone-50 hover:bg-stone-100"}`}
               >
                 <span className="text-sm font-semibold">{day}</span>
                 {spent > 0 && <span className={`mt-1 truncate text-[0.58rem] font-semibold ${isToday ? "text-red-200" : "text-red-700"}`}>{won.format(spent)}</span>}

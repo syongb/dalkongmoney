@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { safeReturnTo } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { TablesInsert, TablesUpdate } from "@/lib/supabase/database.types";
 import type { TransactionType } from "@/lib/transactions";
@@ -86,6 +87,12 @@ async function authenticatedClient() {
   return { supabase, user, error };
 }
 
+function redirectToFreshPath(value: FormDataEntryValue | null, fallback: string): never {
+  const returnTo = safeReturnTo(String(value ?? ""), fallback);
+  revalidatePath(returnTo.split(/[?#]/, 1)[0] || "/");
+  redirect(returnTo);
+}
+
 export async function createTransaction(
   _state: TransactionActionState,
   formData: FormData,
@@ -96,17 +103,14 @@ export async function createTransaction(
   const { supabase, user, error: authError } = await authenticatedClient();
   if (authError || !user) return { message: "로그인 상태를 다시 확인해주세요." };
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (membershipError) return { message: membershipError.message };
-  if (!membership) return { message: "먼저 함께 쓸 가계부를 만들어주세요." };
+  const householdId = String(formData.get("household_id") ?? "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(householdId)) {
+    return { message: "함께 쓰는 가계부 정보를 다시 확인해주세요." };
+  }
 
   const value = parsed.value;
   const transaction: TablesInsert<"transactions"> = {
-    household_id: membership.household_id,
+    household_id: householdId,
     amount: value.amount,
     type: value.type,
     category_id: value.categoryId,
@@ -120,8 +124,7 @@ export async function createTransaction(
   const { error } = await supabase.from("transactions").insert(transaction);
   if (error) return { message: error.message };
 
-  revalidatePath("/");
-  redirect("/");
+  redirectToFreshPath(formData.get("return_to"), "/");
 }
 
 export async function updateTransaction(
@@ -155,8 +158,7 @@ export async function updateTransaction(
   if (error) return { message: error.message };
   if (!data) return { message: "수정할 거래를 찾을 수 없습니다." };
 
-  revalidatePath("/transactions");
-  redirect("/transactions");
+  redirectToFreshPath(formData.get("return_to"), "/transactions");
 }
 
 export async function deleteTransaction(
@@ -178,6 +180,5 @@ export async function deleteTransaction(
   if (error) return { message: error.message };
   if (!data) return { message: "삭제할 거래를 찾을 수 없습니다." };
 
-  revalidatePath("/transactions");
-  redirect("/transactions");
+  redirectToFreshPath(_formData.get("return_to"), "/transactions");
 }

@@ -53,12 +53,6 @@ export async function importPreviousMonthBudgets() {
     if (error) throw new Error(error.message);
   }
 
-  const { data: savedBudgets } = await supabase.from("budgets").select("amount").eq("household_id", membership.household_id).eq("budget_month", monthStart).not("category_id", "is", null);
-  const total = (savedBudgets ?? []).reduce((sum, budget) => sum + Number(budget.amount), 0);
-  const { data: overall } = await supabase.from("budgets").update({ amount: total }).eq("household_id", membership.household_id).eq("budget_month", monthStart).is("category_id", null).select("id").maybeSingle();
-  if (!overall) await supabase.from("budgets").insert({ household_id: membership.household_id, budget_month: monthStart, amount: total, category_id: null });
-
-  revalidatePath("/");
   revalidatePath("/budget");
   redirect("/budget");
 }
@@ -167,20 +161,6 @@ export async function saveBudgetCategories(
     }
   }
 
-  const { data: savedBudgets, error: budgetError } = await supabase.from("budgets").select("amount").eq("household_id", membership.household_id).eq("budget_month", monthStart).not("category_id", "is", null);
-  if (budgetError) return { message: budgetError.message };
-  const total = (savedBudgets ?? []).reduce((sum, budget) => sum + Number(budget.amount), 0);
-
-  const { data: updatedOverall, error: overallUpdateError } = await supabase.from("budgets").update({ amount: total }).eq("household_id", membership.household_id).eq("budget_month", monthStart).is("category_id", null).select("id").maybeSingle();
-  if (overallUpdateError) return { message: overallUpdateError.message };
-  if (!updatedOverall) {
-    const { error } = await supabase.from("budgets").insert({ household_id: membership.household_id, budget_month: monthStart, amount: total, category_id: null });
-    if (error) return { message: error.message };
-  }
-
   revalidatePath("/");
-  revalidatePath("/budget");
-  revalidatePath("/transactions/new");
-  revalidatePath("/monthly-summary");
   redirect("/?view=budget");
 }

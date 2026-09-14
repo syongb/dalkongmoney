@@ -17,7 +17,7 @@ export function TransactionList({
   returnTo?: string;
 }) {
   if (transactions.length === 0) {
-    return <p className="rounded-lg bg-stone-100 px-3 py-4 text-center text-xs text-stone-500">{emptyMessage}</p>;
+    return <p className="rounded-lg bg-stone-100 px-3 py-3 text-center text-xs text-stone-500">{emptyMessage}</p>;
   }
 
   const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
@@ -33,7 +33,7 @@ export function TransactionList({
         const typeLabel = transaction.type === "income" ? "수입" : "지출";
 
         return (
-          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={`grid min-h-12 items-center gap-2 py-1 ${showDate ? "grid-cols-[2.25rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}>
+          <Link key={transaction.id} href={`/transactions/${transaction.id}/edit${returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ""}`} className={`grid min-h-11 items-center gap-2 py-0.5 ${showDate ? "grid-cols-[2.25rem_minmax(0,1fr)_auto]" : "grid-cols-[minmax(0,1fr)_auto]"}`}>
             {showDate && <span className="text-xs text-stone-500">{date}</span>}
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium">{transaction.merchant_name ?? "상호명 없음"}</span>

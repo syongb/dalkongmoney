@@ -44,12 +44,12 @@ export default async function EditTransactionPage({
   }).format(new Date(transaction.created_at));
 
   return (
-    <main className="mx-auto min-h-screen max-w-md px-5 py-8">
+    <main className="mx-auto min-h-screen max-w-md px-4 py-5">
       <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} />
       <BackLink fallback={returnTo} />
-      <h1 className="mt-4 text-2xl font-bold">거래 수정</h1>
-      <p className="mt-2 text-sm text-stone-500">처음 등록: {creator} · {createdAt}</p>
-      <div className="mt-8">
+      <h1 className="mt-2 text-xl font-bold">거래 수정</h1>
+      <p className="mt-1 text-xs text-stone-500">처음 등록: {creator} · {createdAt}</p>
+      <div className="mt-3">
         <TransactionForm
           key={categories?.map((category) => `${category.id}:${category.name}:${category.is_active}`).join("|")}
           mode="edit"
@@ -70,7 +70,7 @@ export default async function EditTransactionPage({
           }}
           cancelHref={returnTo}
         />
-        <DeleteTransactionForm transactionId={transaction.id} />
+        <DeleteTransactionForm transactionId={transaction.id} returnTo={returnTo} />
       </div>
     </main>
   );

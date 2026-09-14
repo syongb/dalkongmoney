@@ -67,9 +67,20 @@ export function RealtimeRefresh({
       }
     }
 
+    async function reconnect() {
+      if (!active) return;
+      const channels = [transactionChannel, budgetChannel].filter(
+        (channel): channel is NonNullable<typeof channel> => channel !== null,
+      );
+      transactionChannel = null;
+      budgetChannel = null;
+      await Promise.all(channels.map((channel) => supabase.removeChannel(channel)));
+      if (active) await subscribe();
+    }
+
     function recover() {
       requestRefresh();
-      if (((includeTransactions || includeCategories) && !transactionChannel) || (includeBudgets && !budgetChannel)) void subscribe();
+      void reconnect();
     }
 
     const handleVisibilityChange = () => {
