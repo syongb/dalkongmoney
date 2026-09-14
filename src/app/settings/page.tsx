@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { BackLink } from "@/app/back-link";
 import { createClient } from "@/lib/supabase/server";
 import { RealtimeRefresh } from "@/app/realtime-refresh";
 import { DisplayNameForm } from "./display-name-form";
@@ -21,7 +21,7 @@ export default async function SettingsPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-5 py-8">
-      <Link href="/" className="text-sm text-stone-600">← 홈</Link>
+      <BackLink fallback="/" />
       <RealtimeRefresh householdId={membership.household_id} includeTransactions={false} includeBudgets includeCategories={false} />
       <h1 className="mt-3 text-xl font-bold">설정</h1>
       <p className="mt-1 text-xs text-stone-500">내 이름과 함께 쓰는 가계부 이름을 관리합니다.</p>
